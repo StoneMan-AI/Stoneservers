@@ -200,7 +200,9 @@
         // 加载套餐数据
         async function loadPlans() {
             try {
-                const response = await fetch('/api/plans');
+                const response = await fetch('/api/plans', {
+                    credentials: 'include' // 包含 cookies
+                });
                 const data = await response.json();
                 allPlans = data.plans;
                 renderPlans();
@@ -249,7 +251,9 @@
         async function subscribe(planId) {
             try {
                 // 检查登录状态
-                const authResponse = await fetch('/auth/check');
+                const authResponse = await fetch('/auth/check', {
+                    credentials: 'include' // 包含 cookies
+                });
                 const authData = await authResponse.json();
                 
                 if (!authData.authenticated) {
@@ -265,7 +269,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ planId }),
-                    credentials: 'include',
+                    credentials: 'include', // 包含 cookies
                 });
 
                 if (!response.ok) {

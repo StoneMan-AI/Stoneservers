@@ -26,16 +26,49 @@ app.use(
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrcAttr: ["'unsafe-inline'"],  // 允许内联事件处理器（onclick 等）
         imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'https://api.stripe.com'], // 允许 Stripe API 请求
       },
     },
+    // 生产环境启用 HSTS
+    hsts: process.env.NODE_ENV === 'production' ? {
+      maxAge: 31536000, // 1 年
+      includeSubDomains: true,
+      preload: true,
+    } : false,
   })
 );
 
 // CORS 配置
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function(origin, callback) {
+    // 允许无 origin 的请求（如 Postman、同源请求）
+    if (!origin) return callback(null, true);
+    
+    // 开发环境允许所有 localhost
+    if (process.env.NODE_ENV !== 'production') {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
+    
+    // 生产环境检查配置的域名
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
+    ].filter(Boolean);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // Webhook 路由需要原始 body，所以要在 bodyParser 之前定义
@@ -51,13 +84,18 @@ app.use(express.static('public'));
 // Session 配置
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    name: 'stoneservers.sid', // 自定义 session cookie 名称
+    secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: false, // 只在登录后保存 session
+    rolling: true, // 每次请求都重新设置 cookie，保持活跃
     cookie: {
       secure: process.env.NODE_ENV === 'production', // 生产环境使用 HTTPS
       httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // 生产环境防止 CSRF
+      domain: process.env.COOKIE_DOMAIN || undefined, // 支持配置 cookie 域名
       maxAge: 24 * 60 * 60 * 1000, // 24 小时
+      path: '/', // 确保 cookie 在整个站点可用
     },
   })
 );
@@ -113,7 +151,13 @@ app.listen(PORT, () => {
   console.log('🚀 服务器启动成功！');
   console.log(`📡 监听端口: ${PORT}`);
   console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 API: http://localhost:${PORT}`);
+  
+  // 根据环境显示不同的 URL
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`🔗 域名: ${process.env.FRONTEND_URL || 'https://www.adddesigngroup.com'}`);
+  } else {
+    console.log(`🔗 API: http://localhost:${PORT}`);
+  }
   
   // 启动定时任务
   startCronJobs();
