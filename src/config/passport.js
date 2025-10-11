@@ -1,0 +1,47 @@
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const User = require('../models/User');
+
+// 序列化用户
+passport.serializeUser((user, done) => {
+  done(null, user.email);
+});
+
+// 反序列化用户
+passport.deserializeUser(async (email, done) => {
+  try {
+    const user = await User.findByEmail(email);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+});
+
+// Google OAuth 策略
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        // 获取用户邮箱
+        const email = profile.emails[0].value;
+        
+        // 创建或查找用户
+        const user = await User.findOrCreate(email);
+        
+        console.log('✅ 用户登录成功:', email);
+        done(null, user);
+      } catch (error) {
+        console.error('❌ OAuth 认证失败:', error);
+        done(error, null);
+      }
+    }
+  )
+);
+
+module.exports = passport;
+
