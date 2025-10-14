@@ -113,19 +113,30 @@ curl http://localhost:3000/api/plans
 
 ## 🐛 常见问题排查
 
-### 问题 1: 页面仍然显示 CSP 错误
+### 问题 1: 页面显示 CSP 错误
 
-**症状**：
+**症状 A - 内联脚本被阻止**：
 ```
 Refused to execute inline script...
 ```
 
+**症状 B - 内联事件处理器被阻止**：
+```
+Refused to execute inline event handler...
+script-src-attr 'none'
+```
+
 **解决方法**：
 1. 确保已保存 `src/server.js` 文件
-2. 完全停止服务器（Ctrl+C）
-3. 重新启动：`npm run dev`
-4. 清除浏览器缓存（Ctrl + Shift + Delete）
-5. 强制刷新页面（Ctrl + F5）
+2. 确认 Helmet 配置包含以下内容：
+   ```javascript
+   scriptSrc: ["'self'", "'unsafe-inline'"],
+   scriptSrcAttr: ["'unsafe-inline'"],
+   ```
+3. 完全停止服务器（Ctrl+C）
+4. 重新启动：`npm run dev`
+5. 清除浏览器缓存（Ctrl + Shift + Delete）
+6. 强制刷新页面（Ctrl + F5）
 
 ---
 

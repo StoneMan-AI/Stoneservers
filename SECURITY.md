@@ -10,10 +10,11 @@
 helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],           // 默认只允许同源资源
-      styleSrc: ["'self'", "'unsafe-inline'"],  // 允许内联样式
-      scriptSrc: ["'self'", "'unsafe-inline'"], // 允许内联脚本
-      imgSrc: ["'self'", 'data:', 'https:'],    // 允许图片
+      defaultSrc: ["'self'"],                    // 默认只允许同源资源
+      styleSrc: ["'self'", "'unsafe-inline'"],   // 允许内联样式
+      scriptSrc: ["'self'", "'unsafe-inline'"],  // 允许内联脚本
+      scriptSrcAttr: ["'unsafe-inline'"],        // 允许内联事件处理器（onclick 等）
+      imgSrc: ["'self'", 'data:', 'https:'],     // 允许图片
     },
   },
 })
@@ -21,9 +22,10 @@ helmet({
 
 ### 为什么允许 'unsafe-inline'？
 
-当前项目的前端页面使用了内联 JavaScript 和 CSS，为了简化开发和部署：
+当前项目的前端页面使用了内联 JavaScript、CSS 和事件处理器，为了简化开发和部署：
 - 所有 HTML 页面是自包含的
 - 不需要额外的 JavaScript 文件管理
+- 使用内联事件处理器（`onclick`、`onchange` 等）
 - 适合小型项目快速开发
 
 ### 安全性考虑

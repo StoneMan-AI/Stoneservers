@@ -165,7 +165,7 @@ docker-compose up -d
 ```nginx
 server {
     listen 80;
-    server_name yourdomain.com;
+    server_name adddesigngroup.com www.adddesigngroup.com;
 
     location / {
         proxy_pass http://localhost:3000;
@@ -188,7 +188,7 @@ server {
 sudo apt-get install certbot python3-certbot-nginx
 
 # 获取证书
-sudo certbot --nginx -d yourdomain.com
+sudo certbot --nginx -d adddesigngroup.com
 
 # 自动续期
 sudo certbot renew --dry-run
