@@ -3,7 +3,8 @@ module.exports = {
   apps: [
     {
       name: 'stoneservers',
-      script: './src/server.js',
+      script: 'npm',
+      args: 'start',
       instances: 'max', // 根据 CPU 核心数自动设置实例数
       exec_mode: 'cluster',
       env: {
