@@ -16,7 +16,8 @@ package-lock.json.backup
 
 .env.local
 .DS_Store
-
+.env.example
+.env
 # ======================================
 # 构建产物
 # ======================================
