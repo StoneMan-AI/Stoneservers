@@ -5,8 +5,8 @@ module.exports = {
       name: 'stoneservers-frontend',
       script: 'npm',
       args: 'start',
-      instances: 'max', // 根据 CPU 核心数自动设置实例数
-      exec_mode: 'cluster',
+      instances: 1, // 单实例避免冲突
+      exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
