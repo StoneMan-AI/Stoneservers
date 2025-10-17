@@ -32,7 +32,8 @@
     "jsonwebtoken": "^9.0.2",
     "stripe": "^14.7.0",
     "pg": "^8.11.3",
-    "node-cron": "^3.0.3"
+    "node-cron": "^3.0.3",
+    "connect-pg-simple": "^9.0.0"
   },
   "devDependencies": {
     "eslint": "^8",

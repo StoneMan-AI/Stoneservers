@@ -4,6 +4,7 @@ const passport = require('./config/passport');
 const cors = require('cors');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
+const pgSession = require('connect-pg-simple')(session);
 require('dotenv').config();
 
 // 导入路由
@@ -92,9 +93,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // 静态文件服务
 app.use(express.static('public'));
 
-// Session 配置
+// Session 配置 - 使用数据库存储
 app.use(
   session({
+    store: new pgSession({
+      conString: `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`,
+      tableName: 'user_sessions'
+    }),
     name: 'stoneservers.sid', // 自定义 session cookie 名称
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
     resave: false,
