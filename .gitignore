@@ -65,4 +65,5 @@ pids/
 *.swo
 *.bak
 *.tmp
+*.sh
 node_modules/

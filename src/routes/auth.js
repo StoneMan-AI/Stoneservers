@@ -2,11 +2,23 @@ const express = require('express');
 const passport = require('../config/passport');
 const router = express.Router();
 
-// Gmail 登录
+// Google OAuth 登录
 router.get(
   '/google',
+  (req, res, next) => {
+    console.log('🔐 开始 Google OAuth 登录流程');
+    console.log('📋 配置信息:', {
+      clientID: process.env.GOOGLE_CLIENT_ID ? '已设置' : '未设置',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ? '已设置' : '未设置',
+      callbackURL: process.env.GOOGLE_CALLBACK_URL || `${process.env.FRONTEND_URL}/auth/google/callback`,
+    });
+    next();
+  },
   passport.authenticate('google', {
     scope: ['profile', 'email'],
+    // 确保使用 Google 官方登录页面
+    accessType: 'offline',
+    prompt: 'consent',
   })
 );
 

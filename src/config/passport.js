@@ -23,7 +23,11 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL || `${process.env.FRONTEND_URL}/auth/google/callback`,
+      // 确保使用 Google 官方 OAuth 端点
+      authorizationURL: 'https://accounts.google.com/o/oauth2/v2/auth',
+      tokenURL: 'https://oauth2.googleapis.com/token',
+      userInfoURL: 'https://www.googleapis.com/oauth2/v2/userinfo',
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
