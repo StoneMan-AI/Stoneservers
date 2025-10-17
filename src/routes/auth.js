@@ -51,15 +51,26 @@ router.get(
           const hasActiveSubscription = user.subscription_status === 'active' && 
             (user.subscription_expiry === null || new Date(user.subscription_expiry) > new Date());
           
+          console.log('🔍 用户订阅状态检查:', {
+            email: user.email,
+            subscription_status: user.subscription_status,
+            subscription_expiry: user.subscription_expiry,
+            hasActiveSubscription: hasActiveSubscription,
+            currentTime: new Date().toISOString()
+          });
+          
           if (hasActiveSubscription) {
             // 用户已订阅，跳转到 AI 生图页面
+            console.log('✅ 用户已订阅，跳转到 AI 生图页面');
             res.redirect('/ai-generator');
           } else {
             // 用户未订阅，跳转到首页并定位到 Pricing 模块
+            console.log('❌ 用户未订阅，跳转到首页 Pricing 模块');
             res.redirect('/#pricing');
           }
         } else {
           // 用户不存在，跳转到首页并定位到 Pricing 模块
+          console.log('❌ 用户不存在，跳转到首页 Pricing 模块');
           res.redirect('/#pricing');
         }
       });
