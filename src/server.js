@@ -43,12 +43,18 @@ app.use(
 // CORS 配置
 app.use(cors({
   origin: function(origin, callback) {
+    console.log('🌐 CORS 检查 origin:', origin);
+    
     // 允许无 origin 的请求（如 Postman、同源请求）
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('✅ 允许无 origin 请求');
+      return callback(null, true);
+    }
     
     // 开发环境允许所有 localhost
     if (process.env.NODE_ENV !== 'production') {
       if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        console.log('✅ 开发环境允许:', origin);
         return callback(null, true);
       }
     }
@@ -56,19 +62,24 @@ app.use(cors({
     // 生产环境检查配置的域名
     const allowedOrigins = [
       process.env.FRONTEND_URL,
+      'https://www.adddesigngroup.com',
       'http://localhost:3000',
       'http://127.0.0.1:3000'
     ].filter(Boolean);
     
+    console.log('📋 允许的域名:', allowedOrigins);
+    
     if (allowedOrigins.includes(origin)) {
+      console.log('✅ 允许的域名:', origin);
       callback(null, true);
     } else {
+      console.log('❌ 拒绝的域名:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
 }));
 
 // Webhook 路由需要原始 body，所以要在 bodyParser 之前定义
@@ -93,7 +104,7 @@ app.use(
       secure: process.env.NODE_ENV === 'production', // 生产环境使用 HTTPS
       httpOnly: true,
       sameSite: 'lax', // 使用 lax 以支持跨域请求
-      domain: process.env.COOKIE_DOMAIN || undefined, // 支持配置 cookie 域名
+      // 移除 domain 限制，让 cookie 在子域名间共享
       maxAge: 24 * 60 * 60 * 1000, // 24 小时
       path: '/', // 确保 cookie 在整个站点可用
     },
@@ -103,6 +114,19 @@ app.use(
 // 初始化 Passport
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Session 调试中间件
+app.use((req, res, next) => {
+  console.log('🍪 Session 调试:', {
+    sessionID: req.sessionID,
+    isAuthenticated: req.isAuthenticated(),
+    hasUser: !!req.user,
+    userEmail: req.user ? req.user.email : null,
+    cookies: req.headers.cookie ? '已设置' : '未设置',
+    sessionData: req.session ? Object.keys(req.session) : '无 session'
+  });
+  next();
+});
 
 // 注册路由
 app.use('/auth', authRoutes);
