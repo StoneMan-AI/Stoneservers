@@ -106,7 +106,7 @@ app.use(
     saveUninitialized: false, // 只在登录后保存 session
     rolling: true, // 每次请求都重新设置 cookie，保持活跃
     cookie: {
-      secure: process.env.NODE_ENV === 'production', // 生产环境使用 HTTPS
+      secure: false, // 临时设置为 false 进行测试
       httpOnly: true,
       sameSite: 'lax', // 使用 lax 以支持跨域请求
       // 移除 domain 限制，让 cookie 在子域名间共享
@@ -128,7 +128,9 @@ app.use((req, res, next) => {
     hasUser: !!req.user,
     userEmail: req.user ? req.user.email : null,
     cookies: req.headers.cookie ? '已设置' : '未设置',
-    sessionData: req.session ? Object.keys(req.session) : '无 session'
+    sessionData: req.session ? Object.keys(req.session) : '无 session',
+    cookieHeader: req.headers.cookie,
+    sessionStore: req.sessionStore ? '已连接' : '未连接'
   });
   next();
 });
