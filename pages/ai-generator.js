@@ -32,9 +32,24 @@ export default function AIGenerator() {
         
         const user = await response.json()
         
+        console.log('🔍 AI Generator 页面 - 用户信息:', {
+          email: user.email,
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionExpiry: user.subscriptionExpiry,
+          points: user.points,
+          modelQuota: user.modelQuota
+        })
+        
         // 检查订阅状态
-        const hasActiveSubscription = user.subscription_status === 'active' && 
-          (user.subscription_expiry === null || new Date(user.subscription_expiry) > new Date())
+        const hasActiveSubscription = user.subscriptionStatus === 'active' && 
+          (user.subscriptionExpiry === null || new Date(user.subscriptionExpiry) > new Date())
+        
+        console.log('🔍 AI Generator 页面 - 订阅状态检查:', {
+          hasActiveSubscription: hasActiveSubscription,
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionExpiry: user.subscriptionExpiry,
+          currentTime: new Date().toISOString()
+        })
         
         if (!hasActiveSubscription) {
           // 用户未订阅，跳转到首页并定位到 Pricing 模块
