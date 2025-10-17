@@ -16,17 +16,45 @@ router.get(
   passport.authenticate('google', {
     failureRedirect: '/',
   }),
-  (req, res) => {
-    // 登录成功后，先保存 session，然后重定向
-    req.session.save((err) => {
-      if (err) {
-        console.error('❌ Session 保存失败:', err);
-        return res.redirect('/');
-      }
-      console.log('✅ Session 保存成功，用户:', req.user.email);
-      // 重定向到控制面板
-      res.redirect('/dashboard.html');
-    });
+  async (req, res) => {
+    try {
+      // 登录成功后，先保存 session
+      req.session.save(async (err) => {
+        if (err) {
+          console.error('❌ Session 保存失败:', err);
+          return res.redirect('/');
+        }
+        
+        console.log('✅ Session 保存成功，用户:', req.user.email);
+        
+        // 检查用户订阅状态
+        const { query } = require('../database/db');
+        const userResult = await query(
+          'SELECT subscription_status, subscription_expiry FROM users WHERE email = $1',
+          [req.user.email]
+        );
+        
+        if (userResult.rows.length > 0) {
+          const user = userResult.rows[0];
+          const hasActiveSubscription = user.subscription_status === 'active' && 
+            (user.subscription_expiry === null || new Date(user.subscription_expiry) > new Date());
+          
+          if (hasActiveSubscription) {
+            // 用户已订阅，跳转到 AI 生图页面
+            res.redirect('/ai-generator');
+          } else {
+            // 用户未订阅，跳转到首页并定位到 Pricing 模块
+            res.redirect('/#pricing');
+          }
+        } else {
+          // 用户不存在，跳转到首页并定位到 Pricing 模块
+          res.redirect('/#pricing');
+        }
+      });
+    } catch (error) {
+      console.error('❌ 检查订阅状态失败:', error);
+      res.redirect('/#pricing');
+    }
   }
 );
 
