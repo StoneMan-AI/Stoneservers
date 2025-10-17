@@ -92,7 +92,7 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production', // 生产环境使用 HTTPS
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // 生产环境防止 CSRF
+      sameSite: 'lax', // 使用 lax 以支持跨域请求
       domain: process.env.COOKIE_DOMAIN || undefined, // 支持配置 cookie 域名
       maxAge: 24 * 60 * 60 * 1000, // 24 小时
       path: '/', // 确保 cookie 在整个站点可用

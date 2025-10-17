@@ -833,13 +833,25 @@ export default function Home() {
   // 处理订阅 - 检查登录状态后决定跳转
   const handleSubscribe = async (planId) => {
     try {
+      console.log('🔍 开始检查用户登录状态...')
+      
       // 先检查用户是否已登录
       const response = await fetch('/auth/user', {
         credentials: 'include'
       })
       
+      console.log('📋 登录状态检查结果:', {
+        status: response.status,
+        ok: response.ok,
+        url: response.url
+      })
+      
       if (response.ok) {
-        // 用户已登录，直接创建支付会话
+        // 用户已登录，解析用户信息
+        const userData = await response.json()
+        console.log('✅ 用户已登录:', userData.email)
+        
+        // 直接创建支付会话
         const paymentResponse = await fetch('/api/subscription/create-checkout', {
           method: 'POST',
           headers: {
@@ -852,17 +864,20 @@ export default function Home() {
         const data = await paymentResponse.json()
         
         if (paymentResponse.ok) {
+          console.log('✅ 支付会话创建成功，跳转到 Stripe')
           // 跳转到 Stripe 支付页面
           window.location.href = data.url
         } else {
+          console.error('❌ 创建支付会话失败:', data.error)
           alert(data.error || '创建支付会话失败')
         }
       } else {
         // 用户未登录，跳转到 Google 登录
+        console.log('❌ 用户未登录，跳转到 Google 登录')
         window.location.href = '/auth/google'
       }
     } catch (error) {
-      console.error('订阅处理失败:', error)
+      console.error('❌ 订阅处理失败:', error)
       // 出错时跳转到 Google 登录
       window.location.href = '/auth/google'
     }

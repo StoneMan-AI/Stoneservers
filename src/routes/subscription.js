@@ -7,9 +7,24 @@ const router = express.Router();
 
 // 中间件：检查用户是否登录
 const requireAuth = (req, res, next) => {
+  console.log('🔍 检查支付认证状态:', {
+    isAuthenticated: req.isAuthenticated(),
+    sessionID: req.sessionID,
+    hasUser: !!req.user,
+    userEmail: req.user ? req.user.email : null,
+    headers: {
+      cookie: req.headers.cookie ? '已设置' : '未设置',
+      origin: req.headers.origin,
+      referer: req.headers.referer
+    }
+  });
+  
   if (!req.isAuthenticated()) {
+    console.log('❌ 用户未认证，拒绝支付请求');
     return res.status(401).json({ error: '请先登录' });
   }
+  
+  console.log('✅ 用户已认证，允许支付请求');
   next();
 };
 
