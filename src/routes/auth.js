@@ -30,6 +30,8 @@ router.get(
   }),
   async (req, res) => {
     try {
+      console.log('🔐 Google 登录回调开始，用户:', req.user ? req.user.email : '无用户信息');
+      
       // 登录成功后，先保存 session
       req.session.save(async (err) => {
         if (err) {
