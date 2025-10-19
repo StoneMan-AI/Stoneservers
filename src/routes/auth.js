@@ -99,11 +99,24 @@ router.get('/user', (req, res) => {
     isAuthenticated: req.isAuthenticated(),
     sessionID: req.sessionID,
     hasUser: !!req.user,
+    userAgent: req.headers['user-agent'],
+    ip: req.ip || req.connection.remoteAddress
   });
   
-  if (!req.isAuthenticated()) {
+  // 加强认证检查
+  if (!req.isAuthenticated() || !req.user) {
+    console.log('❌ 认证失败 - 用户未登录或用户信息缺失');
     return res.status(401).json({ 
       error: '未登录',
+      authenticated: false,
+    });
+  }
+  
+  // 检查用户信息完整性
+  if (!req.user.email) {
+    console.log('❌ 认证失败 - 用户邮箱信息缺失');
+    return res.status(401).json({ 
+      error: '用户信息不完整',
       authenticated: false,
     });
   }
