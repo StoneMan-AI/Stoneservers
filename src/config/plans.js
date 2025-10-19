@@ -3,6 +3,7 @@ const PLANS = {
   // 月付套餐
   basic_monthly: {
     name: 'Basic',
+    level: 1, // 等级：1-基础，2-专业，3-企业，4-高级企业
     billingCycle: 'monthly',
     price: 19,
     points: 50,
@@ -11,6 +12,7 @@ const PLANS = {
   },
   pro_monthly: {
     name: 'Pro',
+    level: 2,
     billingCycle: 'monthly',
     price: 49,
     points: 1000,
@@ -19,6 +21,7 @@ const PLANS = {
   },
   business_monthly: {
     name: 'Business',
+    level: 3,
     billingCycle: 'monthly',
     price: 99,
     points: 3000,
@@ -27,6 +30,7 @@ const PLANS = {
   },
   enterprise_monthly: {
     name: 'Enterprise',
+    level: 4,
     billingCycle: 'monthly',
     price: 199,
     points: 10000,
@@ -37,6 +41,7 @@ const PLANS = {
   // 年付套餐
   basic_yearly: {
     name: 'Basic',
+    level: 1,
     billingCycle: 'yearly',
     price: 99,
     points: 50,
@@ -45,6 +50,7 @@ const PLANS = {
   },
   pro_yearly: {
     name: 'Pro',
+    level: 2,
     billingCycle: 'yearly',
     price: 349,
     points: 1000,
@@ -53,6 +59,7 @@ const PLANS = {
   },
   business_yearly: {
     name: 'Business',
+    level: 3,
     billingCycle: 'yearly',
     price: 599,
     points: 3000,
@@ -61,6 +68,7 @@ const PLANS = {
   },
   enterprise_yearly: {
     name: 'Enterprise',
+    level: 4,
     billingCycle: 'yearly',
     price: 1199,
     points: 10000,

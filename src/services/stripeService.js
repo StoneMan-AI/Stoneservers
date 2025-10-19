@@ -3,6 +3,7 @@ const { getPlan } = require('../config/plans');
 const User = require('../models/User');
 const Subscription = require('../models/Subscription');
 const StripeTransaction = require('../models/StripeTransaction');
+const SubscriptionManager = require('./subscriptionManager');
 
 class StripeService {
   // 创建支付会话
@@ -53,45 +54,23 @@ class StripeService {
     }
   }
 
-  // 处理订阅成功（首次订阅）
+  // 处理订阅成功（使用智能订阅管理器）
   static async handleSubscriptionCreated(stripeSubscription, metadata) {
-    const { email, planType, billingCycle, points, modelQuota } = metadata;
+    const { email, planId } = metadata;
     
     try {
-      // 计算订阅结束日期
-      const startDate = new Date(stripeSubscription.current_period_start * 1000);
-      const endDate = new Date(stripeSubscription.current_period_end * 1000);
-
-      // 获取当前用户信息
-      const user = await User.findByEmail(email);
+      console.log('🔄 开始处理订阅创建:', { email, planId });
       
-      // 首次订阅：发放积分 + 模型配额
-      const newPoints = (user?.points || 0) + parseInt(points);
-      const newModelQuota = parseInt(modelQuota);
-
-      // 更新用户订阅状态
-      await User.updateSubscription(email, {
-        status: 'active',
-        expiry: endDate,
-        points: newPoints,
-        modelQuota: newModelQuota,
-      });
-
-      // 创建订阅记录
-      await Subscription.create({
+      // 使用智能订阅管理器处理订阅
+      const result = await SubscriptionManager.handleNewSubscription(
         email,
-        planType,
-        billingCycle,
-        price: stripeSubscription.plan.amount / 100, // 转换为美元
-        pointsAwarded: parseInt(points),
-        modelQuotaAwarded: parseInt(modelQuota),
-        startDate,
-        endDate,
-        stripeSubscriptionId: stripeSubscription.id,
-      });
+        planId,
+        stripeSubscription,
+        metadata
+      );
 
-      console.log('✅ 订阅创建成功:', email, planType);
-      return true;
+      console.log('✅ 订阅处理完成:', result);
+      return result;
     } catch (error) {
       console.error('❌ 处理订阅创建失败:', error);
       throw error;

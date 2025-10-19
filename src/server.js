@@ -11,6 +11,9 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const subscriptionRoutes = require('./routes/subscription');
 const usageRoutes = require('./routes/usage');
+
+// 导入订阅检查任务
+const SubscriptionChecker = require('./tasks/subscriptionChecker');
 const plansRoutes = require('./routes/plans');
 
 // 导入定时任务
@@ -177,11 +180,16 @@ app.use((err, req, res, next) => {
   });
 });
 
+// 启动订阅检查任务
+const subscriptionChecker = new SubscriptionChecker();
+subscriptionChecker.start();
+
 // 启动服务器
 app.listen(PORT, () => {
   console.log('🚀 服务器启动成功！');
   console.log(`📡 监听端口: ${PORT}`);
   console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📅 订阅检查任务已启动`);
   
   // 根据环境显示不同的 URL
   if (process.env.NODE_ENV === 'production') {
