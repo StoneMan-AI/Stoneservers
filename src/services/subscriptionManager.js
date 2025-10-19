@@ -122,7 +122,7 @@ class SubscriptionManager {
       return await this.handleUpgrade(email, newPlan, currentSubscriptions, stripeSubscription, metadata);
     } else if (newPlanLevel < currentHighestLevel) {
       // 降级：保持高等级，只累加积分
-      return await this.handleDowngrade(email, newPlan, currentSubscriptions, stripeSubscription, metadata);
+      return await this.handleDowngrade(email, newPlan, currentSubscriptions, highestLevelSubscription, stripeSubscription, metadata);
     } else {
       // 同等级：累加积分和模型配额
       return await this.handleSameLevel(email, newPlan, currentSubscriptions, stripeSubscription, metadata);
@@ -155,14 +155,35 @@ class SubscriptionManager {
     });
 
     // 更新用户订阅状态
-    await this.updateUserSubscription(email, {
+    const expiryDate = stripeSubscription.current_period_end 
+      ? new Date(stripeSubscription.current_period_end * 1000)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 默认30天后过期
+
+    console.log('🔧 升级处理 - 时间戳处理:', {
+      stripePeriodEnd: stripeSubscription.current_period_end,
+      expiryDate: expiryDate.toISOString()
+    });
+
+    console.log('🔧 升级处理 - 准备更新用户数据:', {
+      email,
       status: 'active',
-      expiry: new Date(stripeSubscription.current_period_end * 1000),
+      expiry: expiryDate,
       points: totalPoints,
       modelQuota: totalModelQuota,
       planType: newPlan.name,
       planLevel: newPlan.level
     });
+
+    await this.updateUserSubscription(email, {
+      status: 'active',
+      expiry: expiryDate,
+      points: totalPoints,
+      modelQuota: totalModelQuota,
+      planType: newPlan.name,
+      planLevel: newPlan.level
+    });
+
+    console.log('✅ 升级处理 - 用户数据更新完成');
 
     // 创建新订阅记录
     await this.createSubscriptionRecord(email, newPlan, stripeSubscription, metadata);
@@ -202,9 +223,18 @@ class SubscriptionManager {
     });
 
     // 更新用户订阅状态（保持高等级）
+    const expiryDate = stripeSubscription.current_period_end 
+      ? new Date(stripeSubscription.current_period_end * 1000)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 默认30天后过期
+
+    console.log('🔧 降级处理 - 时间戳处理:', {
+      stripePeriodEnd: stripeSubscription.current_period_end,
+      expiryDate: expiryDate.toISOString()
+    });
+
     await this.updateUserSubscription(email, {
       status: 'active',
-      expiry: new Date(stripeSubscription.current_period_end * 1000),
+      expiry: expiryDate,
       points: totalPoints,
       modelQuota: currentModelQuota, // 保持当前模型配额
       planType: highestLevelSubscription.plan_type,
@@ -250,9 +280,18 @@ class SubscriptionManager {
     });
 
     // 更新用户订阅状态
+    const expiryDate = stripeSubscription.current_period_end 
+      ? new Date(stripeSubscription.current_period_end * 1000)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 默认30天后过期
+
+    console.log('🔧 同等级处理 - 时间戳处理:', {
+      stripePeriodEnd: stripeSubscription.current_period_end,
+      expiryDate: expiryDate.toISOString()
+    });
+
     await this.updateUserSubscription(email, {
       status: 'active',
-      expiry: new Date(stripeSubscription.current_period_end * 1000),
+      expiry: expiryDate,
       points: totalPoints,
       modelQuota: totalModelQuota,
       planType: newPlan.name,
@@ -305,7 +344,12 @@ class SubscriptionManager {
    * 更新用户订阅状态
    */
   static async updateUserSubscription(email, subscriptionData) {
-    await query(`
+    console.log('🔧 执行数据库更新:', {
+      email,
+      subscriptionData
+    });
+
+    const result = await query(`
       UPDATE users 
       SET 
         subscription_status = $1,
@@ -325,6 +369,11 @@ class SubscriptionManager {
       subscriptionData.planLevel,
       email
     ]);
+
+    console.log('✅ 数据库更新结果:', {
+      rowCount: result.rowCount,
+      email
+    });
   }
 
   /**
