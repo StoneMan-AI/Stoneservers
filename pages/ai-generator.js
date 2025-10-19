@@ -1,11 +1,13 @@
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
+import PricingAI from '../component-library/sections/PricingAI'
 
 export default function AIGenerator() {
   const router = useRouter()
   const [isChecking, setIsChecking] = useState(true)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [user, setUser] = useState(null)
 
   useEffect(() => {
     // 检查 URL 参数，看是否是支付成功后的跳转
@@ -30,24 +32,25 @@ export default function AIGenerator() {
           return
         }
         
-        const user = await response.json()
+        const userData = await response.json()
+        setUser(userData)
         
         console.log('🔍 AI Generator 页面 - 用户信息:', {
-          email: user.email,
-          subscriptionStatus: user.subscriptionStatus,
-          subscriptionExpiry: user.subscriptionExpiry,
-          points: user.points,
-          modelQuota: user.modelQuota
+          email: userData.email,
+          subscriptionStatus: userData.subscriptionStatus,
+          subscriptionExpiry: userData.subscriptionExpiry,
+          points: userData.points,
+          modelQuota: userData.modelQuota
         })
         
         // 检查订阅状态
-        const hasActiveSubscription = user.subscriptionStatus === 'active' && 
-          (user.subscriptionExpiry === null || new Date(user.subscriptionExpiry) > new Date())
+        const hasActiveSubscription = userData.subscriptionStatus === 'active' && 
+          (userData.subscriptionExpiry === null || new Date(userData.subscriptionExpiry) > new Date())
         
         console.log('🔍 AI Generator 页面 - 订阅状态检查:', {
           hasActiveSubscription: hasActiveSubscription,
-          subscriptionStatus: user.subscriptionStatus,
-          subscriptionExpiry: user.subscriptionExpiry,
+          subscriptionStatus: userData.subscriptionStatus,
+          subscriptionExpiry: userData.subscriptionExpiry,
           currentTime: new Date().toISOString()
         })
         
@@ -120,13 +123,37 @@ export default function AIGenerator() {
               欢迎使用 AI 生图工具！这里将是您的 AI 生图功能页面。
             </p>
             
-            {/* 这里将添加 AI 生图的具体功能 */}
-            <div className="bg-gray-800 rounded-lg p-8 text-center">
+            {/* AI 生图功能区域 */}
+            <div className="bg-gray-800 rounded-lg p-8 text-center mb-12">
               <h3 className="text-xl font-semibold mb-4">AI 生图功能</h3>
-              <p className="text-gray-400">
+              <p className="text-gray-400 mb-6">
                 此页面正在开发中，将包含完整的 AI 生图功能。
               </p>
+              
+              {/* 用户订阅信息 */}
+              {user && (
+                <div className="bg-gray-700 rounded-lg p-6 mb-8">
+                  <h4 className="text-lg font-semibold mb-4">您的订阅信息</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-400">邮箱:</span>
+                      <p className="text-white">{user.email}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">积分:</span>
+                      <p className="text-white">{user.points || 0}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">模型配额:</span>
+                      <p className="text-white">{user.modelQuota || 0}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Pricing 组件 */}
+            <PricingAI user={user} onSubscribe={(planId) => console.log('订阅计划:', planId)} />
           </div>
         </main>
       </div>
