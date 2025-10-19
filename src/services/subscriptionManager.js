@@ -144,6 +144,16 @@ class SubscriptionManager {
     const totalPoints = currentPoints + newPlan.points;
     const totalModelQuota = newPlan.modelQuota; // 升级时使用新等级的模型配额
 
+    console.log('🔍 升级处理详情:', {
+      email,
+      currentPoints,
+      newPlanPoints: newPlan.points,
+      totalPoints,
+      newPlanModelQuota: newPlan.modelQuota,
+      totalModelQuota,
+      message: '升级购买：积分累加，模型配额升级为新等级'
+    });
+
     // 更新用户订阅状态
     await this.updateUserSubscription(email, {
       status: 'active',
@@ -183,10 +193,12 @@ class SubscriptionManager {
 
     console.log('🔍 降级处理详情:', {
       email,
+      currentPoints,
       currentModelQuota,
       newPlanPoints: newPlan.points,
       totalPoints,
-      maintainedLevel: highestLevelSubscription.level
+      maintainedLevel: highestLevelSubscription.level,
+      message: '降级购买：积分累加，保持高等级模型配额'
     });
 
     // 更新用户订阅状态（保持高等级）
@@ -223,16 +235,18 @@ class SubscriptionManager {
     const currentPoints = userResult.rows.length > 0 ? userResult.rows[0].points : 0;
     const currentModelQuota = userResult.rows.length > 0 ? userResult.rows[0].model_quota : 0;
     
-    // 累加积分和模型配额
+    // 累加积分，模型配额保持不变（同等级购买时模型配额不变）
     const totalPoints = currentPoints + newPlan.points;
-    const totalModelQuota = currentModelQuota + newPlan.modelQuota;
+    const totalModelQuota = currentModelQuota; // 同等级购买时模型配额不变
 
     console.log('🔍 同等级处理详情:', {
       email,
+      currentPoints,
+      currentModelQuota,
       newPlanPoints: newPlan.points,
-      newPlanModelQuota: newPlan.modelQuota,
       totalPoints,
-      totalModelQuota
+      totalModelQuota,
+      message: '同等级购买：积分累加，模型配额保持不变'
     });
 
     // 更新用户订阅状态
