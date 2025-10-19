@@ -135,8 +135,13 @@ class SubscriptionManager {
   static async handleUpgrade(email, newPlan, currentSubscriptions, stripeSubscription, metadata) {
     console.log('⬆️ 处理订阅升级');
     
+    // 获取用户当前的实际积分
+    const { query } = require('../database/db');
+    const userResult = await query('SELECT points FROM users WHERE email = $1', [email]);
+    const currentPoints = userResult.rows.length > 0 ? userResult.rows[0].points : 0;
+    
     // 计算总积分和模型配额
-    const totalPoints = currentSubscriptions.reduce((sum, sub) => sum + (sub.points || 0), 0) + newPlan.points;
+    const totalPoints = currentPoints + newPlan.points;
     const totalModelQuota = newPlan.modelQuota; // 升级时使用新等级的模型配额
 
     // 更新用户订阅状态
@@ -167,13 +172,14 @@ class SubscriptionManager {
   static async handleDowngrade(email, newPlan, currentSubscriptions, highestLevelSubscription, stripeSubscription, metadata) {
     console.log('⬇️ 处理订阅降级（保持高等级）');
     
-    // 获取用户当前的实际模型配额
+    // 获取用户当前的实际积分和模型配额
     const { query } = require('../database/db');
-    const userResult = await query('SELECT model_quota FROM users WHERE email = $1', [email]);
+    const userResult = await query('SELECT points, model_quota FROM users WHERE email = $1', [email]);
+    const currentPoints = userResult.rows.length > 0 ? userResult.rows[0].points : 0;
     const currentModelQuota = userResult.rows.length > 0 ? userResult.rows[0].model_quota : 0;
     
-    // 保持当前最高等级的模型配额，只累加积分
-    const totalPoints = currentSubscriptions.reduce((sum, sub) => sum + (sub.points || 0), 0) + newPlan.points;
+    // 保持当前最高等级的模型配额，累加积分
+    const totalPoints = currentPoints + newPlan.points;
 
     console.log('🔍 降级处理详情:', {
       email,
@@ -211,9 +217,15 @@ class SubscriptionManager {
   static async handleSameLevel(email, newPlan, currentSubscriptions, stripeSubscription, metadata) {
     console.log('🔄 处理同等级订阅');
     
+    // 获取用户当前的实际积分和模型配额
+    const { query } = require('../database/db');
+    const userResult = await query('SELECT points, model_quota FROM users WHERE email = $1', [email]);
+    const currentPoints = userResult.rows.length > 0 ? userResult.rows[0].points : 0;
+    const currentModelQuota = userResult.rows.length > 0 ? userResult.rows[0].model_quota : 0;
+    
     // 累加积分和模型配额
-    const totalPoints = currentSubscriptions.reduce((sum, sub) => sum + (sub.points || 0), 0) + newPlan.points;
-    const totalModelQuota = currentSubscriptions.reduce((sum, sub) => sum + (sub.model_quota || 0), 0) + newPlan.modelQuota;
+    const totalPoints = currentPoints + newPlan.points;
+    const totalModelQuota = currentModelQuota + newPlan.modelQuota;
 
     console.log('🔍 同等级处理详情:', {
       email,
