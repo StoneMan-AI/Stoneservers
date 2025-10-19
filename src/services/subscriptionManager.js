@@ -167,16 +167,28 @@ class SubscriptionManager {
   static async handleDowngrade(email, newPlan, currentSubscriptions, highestLevelSubscription, stripeSubscription, metadata) {
     console.log('⬇️ 处理订阅降级（保持高等级）');
     
-    // 保持最高等级的模型配额，只累加积分
+    // 获取用户当前的实际模型配额
+    const { query } = require('../database/db');
+    const userResult = await query('SELECT model_quota FROM users WHERE email = $1', [email]);
+    const currentModelQuota = userResult.rows.length > 0 ? userResult.rows[0].model_quota : 0;
+    
+    // 保持当前最高等级的模型配额，只累加积分
     const totalPoints = currentSubscriptions.reduce((sum, sub) => sum + (sub.points || 0), 0) + newPlan.points;
-    const highestModelQuota = highestLevelSubscription.model_quota || 0;
+
+    console.log('🔍 降级处理详情:', {
+      email,
+      currentModelQuota,
+      newPlanPoints: newPlan.points,
+      totalPoints,
+      maintainedLevel: highestLevelSubscription.level
+    });
 
     // 更新用户订阅状态（保持高等级）
     await this.updateUserSubscription(email, {
       status: 'active',
       expiry: new Date(stripeSubscription.current_period_end * 1000),
       points: totalPoints,
-      modelQuota: highestModelQuota,
+      modelQuota: currentModelQuota, // 保持当前模型配额
       planType: highestLevelSubscription.plan_type,
       planLevel: highestLevelSubscription.level
     });
@@ -202,6 +214,14 @@ class SubscriptionManager {
     // 累加积分和模型配额
     const totalPoints = currentSubscriptions.reduce((sum, sub) => sum + (sub.points || 0), 0) + newPlan.points;
     const totalModelQuota = currentSubscriptions.reduce((sum, sub) => sum + (sub.model_quota || 0), 0) + newPlan.modelQuota;
+
+    console.log('🔍 同等级处理详情:', {
+      email,
+      newPlanPoints: newPlan.points,
+      newPlanModelQuota: newPlan.modelQuota,
+      totalPoints,
+      totalModelQuota
+    });
 
     // 更新用户订阅状态
     await this.updateUserSubscription(email, {
