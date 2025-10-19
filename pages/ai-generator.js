@@ -88,13 +88,7 @@ export default function AIGenerator() {
           currentTime: new Date().toISOString()
         })
         
-        if (!hasActiveSubscription) {
-          // 用户未订阅，跳转到首页并定位到 Pricing 模块
-          router.push('/#pricing')
-          return
-        }
-        
-        // 用户已登录且已订阅，显示页面
+        // 用户已登录，显示页面（不管是否订阅）
         setIsChecking(false)
       } catch (error) {
         console.error('检查认证状态失败:', error)
@@ -191,10 +185,13 @@ export default function AIGenerator() {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center">
                   <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-                    升级您的 AI 生图体验
+                    {user && user.subscriptionStatus === 'active' ? '升级您的 AI 生图体验' : '选择您的 AI 生图套餐'}
                   </h2>
                   <p className="mt-4 text-xl text-gray-300">
-                    选择适合您的套餐，解锁更多 AI 生图功能
+                    {user && user.subscriptionStatus === 'active' 
+                      ? '升级到更高级别的套餐，获得更多积分和功能' 
+                      : '选择适合您的套餐，解锁更多 AI 生图功能'
+                    }
                   </p>
                 </div>
 
