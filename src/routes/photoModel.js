@@ -9,16 +9,73 @@ const router = express.Router();
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const dest = '/uploads/models'; // 直接使用挂载的 COS 目录
-    if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+    console.log('📁 Multer destination 检查:', {
+      path: dest,
+      exists: fs.existsSync(dest),
+      isDirectory: fs.existsSync(dest) ? fs.statSync(dest).isDirectory() : false,
+      writable: fs.existsSync(dest) ? fs.accessSync(dest, fs.constants.W_OK) === undefined : false
+    });
+    
+    if (!fs.existsSync(dest)) {
+      console.log('📁 目录不存在，尝试创建:', dest);
+      try {
+        fs.mkdirSync(dest, { recursive: true });
+        console.log('📁 目录创建成功');
+      } catch (e) {
+        console.error('📁 目录创建失败:', e);
+      }
+    }
     cb(null, dest);
   },
   filename: function (req, file, cb) {
     const unique = Date.now() + '_' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
-    cb(null, unique + ext);
+    const filename = unique + ext;
+    console.log('📁 生成文件名:', { original: file.originalname, generated: filename });
+    cb(null, filename);
   }
 });
 const upload = multer({ storage });
+
+// 测试挂载目录状态
+router.get('/test-upload-dir', requireAuth, (req, res) => {
+  try {
+    const testDir = '/uploads/models';
+    const testFile = path.join(testDir, 'test.txt');
+    
+    console.log('🔍 测试挂载目录状态:', {
+      dir: testDir,
+      exists: fs.existsSync(testDir),
+      isDir: fs.existsSync(testDir) ? fs.statSync(testDir).isDirectory() : false,
+      writable: fs.existsSync(testDir) ? (() => {
+        try { fs.accessSync(testDir, fs.constants.W_OK); return true; } catch { return false; }
+      })() : false
+    });
+    
+    // 尝试写入测试文件
+    try {
+      fs.writeFileSync(testFile, 'test content');
+      console.log('✅ 测试文件写入成功');
+      fs.unlinkSync(testFile); // 删除测试文件
+      console.log('✅ 测试文件删除成功');
+    } catch (e) {
+      console.error('❌ 测试文件操作失败:', e);
+    }
+    
+    res.json({
+      success: true,
+      dir: testDir,
+      exists: fs.existsSync(testDir),
+      isDirectory: fs.existsSync(testDir) ? fs.statSync(testDir).isDirectory() : false,
+      writable: fs.existsSync(testDir) ? (() => {
+        try { fs.accessSync(testDir, fs.constants.W_OK); return true; } catch { return false; }
+      })() : false
+    });
+  } catch (error) {
+    console.error('测试目录失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // 中间件：检查用户认证
 const requireAuth = (req, res, next) => {

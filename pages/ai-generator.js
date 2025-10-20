@@ -131,19 +131,37 @@ export default function AIGenerator() {
       }, 200)
 
       // 先真实上传图片到服务器
+      console.log('📤 开始上传图片:', {
+        count: uploadedPhotos.length,
+        files: uploadedPhotos.map(f => ({ name: f.name, size: f.size, type: f.type }))
+      })
+      
       const formData = new FormData()
-      uploadedPhotos.forEach(file => formData.append('photos', file))
+      uploadedPhotos.forEach((file, index) => {
+        console.log(`📤 添加文件 ${index + 1}:`, { name: file.name, size: file.size, type: file.type })
+        formData.append('photos', file)
+      })
+      
+      console.log('📤 发送上传请求到 /api/photo-models/models/upload')
       const uploadRes = await fetch('/api/photo-models/models/upload', {
         method: 'POST',
         credentials: 'include',
         body: formData
       })
+      
+      console.log('📤 上传响应状态:', uploadRes.status, uploadRes.ok)
+      
       if (!uploadRes.ok) {
         const err = await uploadRes.json().catch(() => ({}))
+        console.error('📤 上传失败:', err)
         throw new Error(err.message || 'Upload Photos Failed')
       }
+      
       const uploadJson = await uploadRes.json()
+      console.log('📤 上传成功，返回数据:', uploadJson)
+      
       const photosData = uploadJson.files || []
+      console.log('📤 处理后的照片数据:', photosData)
 
       // 调用后端 API 创建模型
       const response = await fetch('/api/photo-models/models', {
