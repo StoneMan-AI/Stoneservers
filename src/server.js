@@ -92,9 +92,9 @@ app.use(cors({
 // Webhook 路由需要原始 body，所以要在 bodyParser 之前定义
 app.use('/api/subscription/webhook', express.raw({ type: 'application/json' }));
 
-// Body 解析器
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Body 解析器 - 增加文件上传限制
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
 // 静态文件服务
 app.use(express.static('public'));
