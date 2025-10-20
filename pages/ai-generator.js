@@ -320,7 +320,7 @@ export default function AIGenerator() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-white">正在验证用户权限...</p>
+          <p className="mt-4 text-white">Verifying your access...</p>
         </div>
       </div>
     )
@@ -351,10 +351,10 @@ export default function AIGenerator() {
               </div>
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-400">
-                  欢迎，{user?.email}
+                  Welcome, {user?.email}
                 </span>
                 <span className="text-sm text-gray-400">
-                  模型配额: {user?.modelQuota || 0}
+                  Model quota: {user?.modelQuota || 0}
                 </span>
                 <button className="bg-orange-500 text-black px-4 py-2 rounded-md hover:bg-orange-600 text-sm font-medium">
                   Upgrade
@@ -401,16 +401,16 @@ export default function AIGenerator() {
               <div className="space-y-6">
                 {/* Model 列表选择器 */}
                 <div className="bg-gray-800 rounded-lg border border-gray-700 p-6" style={{maxHeight: 'calc(100vh - 240px)', overflowY: 'auto'}}>
-                  <h3 className="text-lg font-medium text-white mb-4">Model 管理</h3>
+                  <h3 className="text-lg font-medium text-white mb-4">Model Management</h3>
                   
                   {models.length === 0 ? (
                     <div className="text-center py-8">
-                      <p className="text-gray-400 mb-4">还没有创建任何 Model</p>
+                      <p className="text-gray-400 mb-4">No models yet</p>
                       <button
                         onClick={handleCreateNewModel}
                         className="bg-orange-500 text-black px-4 py-2 rounded-md hover:bg-orange-600 font-medium"
                       >
-                        创建新 Model
+                        Create New Model
                       </button>
                     </div>
                   ) : (
@@ -420,7 +420,7 @@ export default function AIGenerator() {
                           onClick={() => setShowModelList(!showModelList)}
                           className="flex items-center justify-between w-full p-3 border border-gray-600 rounded-md hover:bg-gray-700 bg-gray-800"
                         >
-                          <span className="text-white">{selectedModel ? selectedModel.name : '选择 Model'}</span>
+                          <span className="text-white">{selectedModel ? selectedModel.name : 'Select Model'}</span>
                           <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
@@ -438,7 +438,7 @@ export default function AIGenerator() {
                               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                               </svg>
-                              + Create New Model
+                              Create New Model
                             </div>
                           </button>
                           
@@ -453,10 +453,10 @@ export default function AIGenerator() {
                             >
                               <div className="font-medium text-white">{model.name}</div>
                               <div className="text-sm text-gray-400">
-                                {model.type} • {model.age}岁 • {model.eyeColor}眼睛
+                                {model.type} • {model.age} yrs • {model.eyeColor} eyes
                               </div>
                               <div className="text-xs text-gray-500">
-                                创建于 {new Date(model.createdAt).toLocaleDateString()}
+                                Created {new Date(model.createdAt).toLocaleDateString()}
                               </div>
                             </button>
                           ))}
@@ -469,7 +469,7 @@ export default function AIGenerator() {
                 {/* Model 属性表单 */}
                 {!selectedModel && (
                   <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-                    <h3 className="text-lg font-medium text-white mb-4">创建 Photo Model</h3>
+                    <h3 className="text-lg font-medium text-white mb-4">Create Photo Model</h3>
                     <p className="text-gray-400 mb-6">The model you create is private and only usable by you.</p>
                     
                     <div className="space-y-4">
@@ -630,26 +630,26 @@ export default function AIGenerator() {
                 {/* 照片上传区域 */}
                 {!selectedModel && (
                   <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-                    <h3 className="text-lg font-medium text-white mb-4">SELECT 25+ PHOTOS</h3>
+                    <h3 className="text-lg font-medium text-white mb-4">SELECT 10+ PHOTOS</h3>
                     
                     {/* Good Photos 示例说明 */}
                     <div className="mb-6 p-4 bg-green-900 border border-green-600 rounded-md">
                       <div className="flex items-center mb-2">
                         <span className="text-green-400 mr-2">✓</span>
-                        <h4 className="font-medium text-green-300">Good photos</h4>
+                          <h4 className="font-medium text-green-300">Good photos</h4>
                       </div>
                       <p className="text-sm text-green-200 mb-3">
                         High variety, mix of close-up selfies and full body shots in a variety of places, angles, clothes and expressions.
                       </p>
                       <div className="grid grid-cols-3 gap-2">
                         <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-400">示例图片 1</span>
+                          <span className="text-xs text-gray-400">Example 1</span>
                         </div>
                         <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-400">示例图片 2</span>
+                          <span className="text-xs text-gray-400">Example 2</span>
                         </div>
                         <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-400">示例图片 3</span>
+                          <span className="text-xs text-gray-400">Example 3</span>
                         </div>
                       </div>
                     </div>
@@ -658,20 +658,20 @@ export default function AIGenerator() {
                     <div className="mb-6 p-4 bg-red-900 border border-red-600 rounded-md">
                       <div className="flex items-center mb-2">
                         <span className="text-red-400 mr-2">✗</span>
-                        <h4 className="font-medium text-red-300">Bad photos</h4>
+                          <h4 className="font-medium text-red-300">Bad photos</h4>
                       </div>
                       <p className="text-sm text-red-200 mb-3">
                         Low variety, group photos, other people, sunglasses, hats, face cut off or not visible.
                       </p>
                       <div className="grid grid-cols-3 gap-2">
                         <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-400">示例图片 1</span>
+                          <span className="text-xs text-gray-400">Example 1</span>
                         </div>
                         <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-400">示例图片 2</span>
+                          <span className="text-xs text-gray-400">Example 2</span>
                         </div>
                         <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-400">示例图片 3</span>
+                          <span className="text-xs text-gray-400">Example 3</span>
                         </div>
                       </div>
                     </div>
@@ -706,7 +706,7 @@ export default function AIGenerator() {
                     {uploadedPhotos.length > 0 && (
                       <div className="mt-4">
                         <h4 className="text-sm font-medium text-white mb-2">
-                          已选择 {uploadedPhotos.length} 张照片：
+                          Selected {uploadedPhotos.length} photos:
                         </h4>
                         <div className="grid grid-cols-4 gap-2">
                           {uploadedPhotos.map((file, index) => (
@@ -752,15 +752,15 @@ export default function AIGenerator() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                           </svg>
                           <div>
-                            <h4 className="font-medium text-red-300">模型配额已用完</h4>
+                            <h4 className="font-medium text-red-300">Model quota exhausted</h4>
                             <p className="text-sm text-red-200 mt-1">
-                              您的模型配额已全部消耗，请升级订阅套餐以创建更多模型。
+                              Your model quota has been used up. Please upgrade your plan.
                             </p>
                             <button
                               onClick={() => handleSubscribe('pro')}
                               className="mt-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm font-medium"
                             >
-                              立即升级
+                              Upgrade now
                             </button>
                           </div>
                         </div>
@@ -773,7 +773,7 @@ export default function AIGenerator() {
                       disabled={isCreatingModel || isUploading || (user && user.modelQuota <= 0)}
                       className="w-full mt-6 bg-orange-500 text-black py-3 px-4 rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
-                      {isCreatingModel ? '创建中...' : 'Create model (~60min)'}
+                      {isCreatingModel ? 'Creating...' : 'Create model (~60min)'}
                     </button>
                   </div>
                 )}
@@ -781,42 +781,38 @@ export default function AIGenerator() {
                 {/* 选中 Model 的属性显示 */}
                 {selectedModel && (
                   <div className="bg-gray-800 rounded-lg border border-gray-700 p-6" style={{maxHeight: 'calc(100vh - 240px)', overflowY: 'auto'}}>
-                    <h3 className="text-lg font-medium text-white mb-4">Model 属性</h3>
+                    <h3 className="text-lg font-medium text-white mb-4">Model Attributes</h3>
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-400">名称:</span>
+                        <span className="text-gray-400">Name:</span>
                         <span className="text-white">{selectedModel.name}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">类型:</span>
+                        <span className="text-gray-400">Type:</span>
                         <span className="text-white">{selectedModel.type}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">年龄:</span>
-                        <span className="text-white">{selectedModel.age}岁</span>
+                        <span className="text-gray-400">Age:</span>
+                        <span className="text-white">{selectedModel.age} yrs</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">眼睛颜色:</span>
+                        <span className="text-gray-400">Eye color:</span>
                         <span className="text-white">{selectedModel.eyeColor}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">体型:</span>
+                        <span className="text-gray-400">Body type:</span>
                         <span className="text-white">{selectedModel.bodyType}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">种族:</span>
+                        <span className="text-gray-400">Ethnicity:</span>
                         <span className="text-white">{selectedModel.ethnicity}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">创建时间:</span>
+                        <span className="text-gray-400">Created at:</span>
                         <span className="text-white text-sm">
                           {new Date(selectedModel.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                    </div>
-                    <div className="mt-4 p-3 bg-gray-700 rounded-md">
-                      <h4 className="text-sm font-medium text-white mb-2">基础 Prompt:</h4>
-                      <p className="text-sm text-gray-300">{selectedModel.basePrompt}</p>
                     </div>
                   </div>
                 )}
@@ -856,14 +852,11 @@ export default function AIGenerator() {
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-12">
+                  <div className="text-center py-12">
                           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          <p className="mt-2 text-gray-400">使用 Photo AI 生成图片后，将在这里显示</p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            基础 Prompt: {selectedModel.basePrompt}
-                          </p>
+                      <p className="mt-2 text-gray-400">Images generated with Photo AI will appear here</p>
                         </div>
                       )}
                     </div>
