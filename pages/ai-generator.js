@@ -255,18 +255,23 @@ export default function AIGenerator() {
   // 加载用户的 Photo Models
   const loadModels = async () => {
     try {
+      console.log('📋 开始加载模型列表...')
       const response = await fetch('/api/photo-models/models', {
         credentials: 'include'
       })
 
       if (response.ok) {
         const result = await response.json()
+        console.log('📋 模型列表加载成功:', result.models)
         setModels(result.models)
         
         // 如果有模型且没有选中，默认选中最新的
         if (result.models.length > 0 && !selectedModel) {
+          console.log('📋 默认选中最新模型:', result.models[0])
           setSelectedModel(result.models[0])
         }
+      } else {
+        console.error('📋 模型列表加载失败:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Load Model List Failed:', error)
@@ -513,8 +518,8 @@ export default function AIGenerator() {
                             </div>
                           </button>
                           
-                          {/* 现有模型列表 */}
-                          {models.slice(0, 4).map((model) => (
+                          {/* 现有模型列表 - 显示所有用户的模型 */}
+                          {models.map((model) => (
                             <button
                               key={model.id}
                               onClick={() => handleModelSelect(model)}
@@ -522,12 +527,11 @@ export default function AIGenerator() {
                                 selectedModel?.id === model.id ? 'bg-orange-900 border-l-4 border-orange-500' : ''
                               }`}
                             >
-                              <div className="font-medium text-white">{model.name}</div>
-                              <div className="text-sm text-gray-400">
-                                {model.type} • {model.age} yrs • {(model.eyeColor || model.eye_color) || '-'} eyes
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                Created {formatDate(model.createdAt || model.created_at)}
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium text-white">{model.name}</div>
+                                <div className="text-xs text-gray-500">
+                                  {formatDate(model.createdAt || model.created_at)}
+                                </div>
                               </div>
                             </button>
                           ))}

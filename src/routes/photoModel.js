@@ -102,6 +102,8 @@ router.get('/test-upload-dir', requireAuth, (req, res) => {
 // 获取用户的所有 Photo Models
 router.get('/models', requireAuth, async (req, res) => {
   try {
+    console.log('📋 获取用户模型列表:', { user: req.user.email });
+    
     const result = await query(
       `SELECT pm.*, 
               COUNT(mp.id) as photo_count,
@@ -114,6 +116,11 @@ router.get('/models', requireAuth, async (req, res) => {
        ORDER BY pm.created_at DESC`,
       [req.user.email]
     );
+
+    console.log('📋 查询结果:', { 
+      count: result.rows.length, 
+      models: result.rows.map(m => ({ id: m.id, name: m.name, created_at: m.created_at }))
+    });
 
     res.json({
       success: true,
