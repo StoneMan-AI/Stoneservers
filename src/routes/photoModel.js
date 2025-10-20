@@ -37,6 +37,14 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// 中间件：检查用户认证
+const requireAuth = (req, res, next) => {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({ success: false, message: '用户未登录' });
+  }
+  next();
+};
+
 // 测试挂载目录状态
 router.get('/test-upload-dir', requireAuth, (req, res) => {
   try {
@@ -76,14 +84,6 @@ router.get('/test-upload-dir', requireAuth, (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
-// 中间件：检查用户认证
-const requireAuth = (req, res, next) => {
-  if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ success: false, message: '用户未登录' });
-  }
-  next();
-};
 
 // 获取用户的所有 Photo Models
 router.get('/models', requireAuth, async (req, res) => {
