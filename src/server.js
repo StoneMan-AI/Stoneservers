@@ -100,14 +100,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 // Ensure uploads directories exist and expose /uploads as static
 try {
-  const uploadsDir = path.join(process.cwd(), 'uploads');
+  const uploadsDir = '/uploads'; // 使用挂载的 COS 目录
   const modelsDir = path.join(uploadsDir, 'models');
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
   if (!fs.existsSync(modelsDir)) fs.mkdirSync(modelsDir, { recursive: true });
 } catch (e) {
   console.error('创建上传目录失败:', e);
 }
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/uploads', express.static('/uploads')); // 直接使用挂载目录
 
 // 信任反向代理（Nginx），以便在 HTTPS 终止后正确识别 secure Cookie
 app.set('trust proxy', 1);

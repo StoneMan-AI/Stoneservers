@@ -8,7 +8,7 @@ const router = express.Router();
 // Multer storage config: save to /uploads/models (mounted COS path)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const dest = path.join(process.cwd(), 'uploads', 'models');
+    const dest = '/uploads/models'; // 直接使用挂载的 COS 目录
     if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
     cb(null, dest);
   },
@@ -57,7 +57,21 @@ router.get('/models', requireAuth, async (req, res) => {
 // 上传训练图片，返回可访问的相对路径 /uploads/models/xxx
 router.post('/models/upload', requireAuth, upload.array('photos', 100), async (req, res) => {
   try {
+    console.log('📁 上传请求接收:', {
+      filesCount: req.files ? req.files.length : 0,
+      body: req.body,
+      user: req.user?.email
+    });
+    
     const files = req.files || [];
+    console.log('📁 文件详情:', files.map(f => ({
+      originalname: f.originalname,
+      filename: f.filename,
+      path: f.path,
+      size: f.size,
+      mimetype: f.mimetype
+    })));
+    
     const mapped = files.map((f, idx) => ({
       name: f.originalname,
       path: `/uploads/models/${path.basename(f.path)}`,
@@ -65,6 +79,8 @@ router.post('/models/upload', requireAuth, upload.array('photos', 100), async (r
       type: f.mimetype,
       uploadOrder: idx + 1,
     }));
+    
+    console.log('📁 返回路径:', mapped);
     res.json({ success: true, files: mapped });
   } catch (error) {
     console.error('上传图片失败:', error);
