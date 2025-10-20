@@ -5,10 +5,10 @@ const path = require('path');
 const fs = require('fs');
 const router = express.Router();
 
-// Multer storage config: save to /uploads/models (mounted COS path)
+// Multer storage config: save to project relative path uploads/models/
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const dest = '/uploads/models'; // 直接使用挂载的 COS 目录
+    const dest = path.join(__dirname, '../../uploads/models'); // 项目相对路径
     console.log('📁 Multer destination 检查:', {
       path: dest,
       exists: fs.existsSync(dest),
@@ -162,9 +162,23 @@ router.post('/models/upload', requireAuth, (req, res, next) => {
       mimetype: file.mimetype
     });
     
+    // 验证文件是否真的保存了
+    const fs = require('fs')
+    try {
+      const stats = fs.statSync(file.path)
+      console.log('📁 文件保存验证:', {
+        exists: true,
+        size: stats.size,
+        created: stats.birthtime,
+        modified: stats.mtime
+      })
+    } catch (error) {
+      console.error('📁 文件保存验证失败:', error.message)
+    }
+    
     const mapped = [{
       name: file.originalname,
-      path: `/uploads/models/${path.basename(file.path)}`,
+      path: `/uploads/models/${path.basename(file.path)}`, // 保持URL路径不变，用于前端访问
       size: file.size,
       type: file.mimetype,
       uploadOrder: 1,
