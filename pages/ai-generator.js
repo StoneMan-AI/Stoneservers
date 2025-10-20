@@ -35,6 +35,15 @@ export default function AIGenerator() {
   const [showBodyTypeDropdown, setShowBodyTypeDropdown] = useState(false)
   const [showEthnicityDropdown, setShowEthnicityDropdown] = useState(false)
 
+  // 格式化日期，兼容 createdAt / created_at，避免 Invalid Date
+  const formatDate = (val) => {
+    const value = val || null
+    if (!value) return '-'
+    const date = new Date(value)
+    if (isNaN(date.getTime())) return '-'
+    return date.toLocaleDateString()
+  }
+
   // 处理订阅函数
   const handleSubscribe = async (planId) => {
     if (!user) {
@@ -428,7 +437,7 @@ export default function AIGenerator() {
                       </div>
 
                       {showModelList && (
-                        <div ref={modelListRef} className="absolute z-20 mt-2 border border-gray-600 rounded-md bg-gray-800 shadow-xl" style={{maxHeight: '14rem', overflowY: 'auto', minWidth: '16rem', width: 'auto'}}>
+                        <div ref={modelListRef} className="absolute z-20 mt-2 border border-gray-600 rounded-md bg-gray-800 shadow-xl" style={{maxHeight: '14rem', overflowY: 'auto', width: '100%'}}>
                           {/* 创建新Model按钮在列表顶部 */}
                           <button
                             onClick={handleCreateNewModel}
@@ -456,7 +465,7 @@ export default function AIGenerator() {
                                 {model.type} • {model.age} yrs • {model.eyeColor} eyes
                               </div>
                               <div className="text-xs text-gray-500">
-                                Created {new Date(model.createdAt).toLocaleDateString()}
+                                Created {formatDate(model.createdAt || model.created_at)}
                               </div>
                             </button>
                           ))}
@@ -810,7 +819,7 @@ export default function AIGenerator() {
                       <div className="flex justify-between">
                         <span className="text-gray-400">Created at:</span>
                         <span className="text-white text-sm">
-                          {new Date(selectedModel.createdAt).toLocaleDateString()}
+                          {formatDate(selectedModel.createdAt || selectedModel.created_at)}
                         </span>
                       </div>
                     </div>
@@ -823,12 +832,12 @@ export default function AIGenerator() {
                 <div className="bg-gray-800 rounded-lg border border-gray-700 p-6" style={{maxHeight: 'calc(100vh - 240px)', overflowY: 'auto'}}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium text-white">
-                      {selectedModel ? `${selectedModel.name} 生成的图片` : '图片展示'}
+                      {selectedModel ? `${selectedModel.name} Photo` : '图片展示'}
                     </h3>
                     {selectedModel && (
                       <div className="flex items-center space-x-4 text-sm text-gray-400">
-                        <span>照片数量: {selectedModel.photoCount}</span>
-                        <span>生成图片: {selectedModel.generatedPhotos?.length || 0}</span>
+                        <span>Photo Count: {selectedModel.photoCount}</span>
+                        <span>Created Images: {selectedModel.generatedPhotos?.length || 0}</span>
                       </div>
                     )}
                   </div>
