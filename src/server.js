@@ -96,6 +96,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // 静态文件服务
 app.use(express.static('public'));
 
+// 信任反向代理（Nginx），以便在 HTTPS 终止后正确识别 secure Cookie
+app.set('trust proxy', 1);
+
 // Session 配置 - 使用数据库存储
 app.use(
   session({
@@ -106,7 +109,7 @@ app.use(
     name: 'stoneservers.sid', // 自定义 session cookie 名称
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
     resave: false,
-    saveUninitialized: true, // 允许保存未初始化的 session，确保 Passport 数据被保存
+    saveUninitialized: false, // 仅在 session 被修改后保存，避免生成空会话
     rolling: false, // 禁用 rolling 模式，避免每次请求都创建新 session
     cookie: {
       secure: process.env.NODE_ENV === 'production', // 生产环境使用 HTTPS
