@@ -64,14 +64,14 @@ export default function AIGenerator() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || '创建支付会话失败');
+        throw new Error(error.error || 'Create Payment Session Failed');
       }
 
       const { url } = await response.json();
       window.location.href = url;
     } catch (error) {
-      console.error('订阅失败:', error);
-      alert('订阅失败: ' + error.message);
+      console.error('Subscription Failed:', error);
+      alert('Subscription Failed: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -94,23 +94,23 @@ export default function AIGenerator() {
   // 创建 Photo Model
   const handleCreateModel = async () => {
     if (!user) {
-      alert('请先登录')
+      alert('Please login first')
       return
     }
 
     // 检查用户模型配额
     if (user.modelQuota <= 0) {
-      alert('您的模型配额已用完，请升级订阅套餐')
+      alert('Your model quota has been used up, please upgrade your subscription plan')
       return
     }
 
     if (!modelForm.name || !modelForm.type || !modelForm.age || !modelForm.eyeColor || !modelForm.bodyType || !modelForm.ethnicity) {
-      alert('请填写所有必填字段')
+      alert('Please fill in all required fields')
       return
     }
 
     if (uploadedPhotos.length === 0) {
-      alert('请至少上传一张照片')
+      alert('Please upload at least one photo')
       return
     }
 
@@ -159,7 +159,7 @@ export default function AIGenerator() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || '创建模型失败')
+        throw new Error(error.message || 'Create Model Failed')
       }
 
       const result = await response.json()
@@ -179,10 +179,10 @@ export default function AIGenerator() {
       })
       setUploadedPhotos([])
 
-      alert('Photo Model 创建成功！基础 Prompt 已生成，可以开始使用 Photo AI 功能。')
+      alert('Photo Model Created Successfully! Base Prompt Generated, You Can Start Using Photo AI Features.')
     } catch (error) {
-      console.error('创建模型失败:', error)
-      alert('创建模型失败: ' + error.message)
+      console.error('Create Model Failed:', error)
+      alert('Create Model Failed: ' + error.message)
     } finally {
       setIsCreatingModel(false)
       setIsUploading(false)
@@ -207,7 +207,7 @@ export default function AIGenerator() {
         }
       }
     } catch (error) {
-      console.error('加载模型列表失败:', error)
+      console.error('Load Model List Failed:', error)
     }
   }
 
@@ -339,14 +339,14 @@ export default function AIGenerator() {
     <>
       <Head>
         <title>AI Generator - Stoneservers</title>
-        <meta name="description" content="AI 图像生成工具" />
+        <meta name="description" content="AI Photo Generator" />
       </Head>
 
       <div className="min-h-screen bg-black text-white">
         {/* 成功消息 */}
         {showSuccessMessage && (
           <div className="bg-green-900 border border-green-600 text-green-300 px-4 py-3 rounded relative mb-4">
-            <span className="block sm:inline">🎉 支付成功！欢迎使用 AI Generator</span>
+            <span className="block sm:inline">🎉 Payment Success! Welcome to AI Generator</span>
           </div>
         )}
 
@@ -651,13 +651,13 @@ export default function AIGenerator() {
                         High variety, mix of close-up selfies and full body shots in a variety of places, angles, clothes and expressions.
                       </p>
                       <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                        <div className="bg-gray-700 aspect-square rounded flex items-center justify-center">
                           <span className="text-xs text-gray-400">Example 1</span>
                         </div>
-                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                        <div className="bg-gray-700 aspect-square rounded flex items-center justify-center">
                           <span className="text-xs text-gray-400">Example 2</span>
                         </div>
-                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                        <div className="bg-gray-700 aspect-square rounded flex items-center justify-center">
                           <span className="text-xs text-gray-400">Example 3</span>
                         </div>
                       </div>
@@ -673,13 +673,13 @@ export default function AIGenerator() {
                         Low variety, group photos, other people, sunglasses, hats, face cut off or not visible.
                       </p>
                       <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                        <div className="bg-gray-700 aspect-square rounded flex items-center justify-center">
                           <span className="text-xs text-gray-400">Example 1</span>
                         </div>
-                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                        <div className="bg-gray-700 aspect-square rounded flex items-center justify-center">
                           <span className="text-xs text-gray-400">Example 2</span>
                         </div>
-                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                        <div className="bg-gray-700 aspect-square rounded flex items-center justify-center">
                           <span className="text-xs text-gray-400">Example 3</span>
                         </div>
                       </div>
@@ -741,7 +741,7 @@ export default function AIGenerator() {
                     {isUploading && (
                       <div className="mt-4">
                         <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-                          <span>上传进度</span>
+                          <span>Upload Progress</span>
                           <span>{uploadProgress}%</span>
                         </div>
                         <div className="w-full bg-gray-700 rounded-full h-2">
@@ -832,7 +832,7 @@ export default function AIGenerator() {
                 <div className="bg-gray-800 rounded-lg border border-gray-700 p-6" style={{maxHeight: 'calc(100vh - 240px)', overflowY: 'auto'}}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium text-white">
-                      {selectedModel ? `${selectedModel.name} Photo` : '图片展示'}
+                      {selectedModel ? `${selectedModel.name} Photo` : 'Photo Show'}
                     </h3>
                     {selectedModel && (
                       <div className="flex items-center space-x-4 text-sm text-gray-400">
@@ -874,7 +874,7 @@ export default function AIGenerator() {
                       <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <p className="mt-2 text-gray-400">请先创建一个 Photo Model</p>
+                      <p className="mt-2 text-gray-400">Please Create A Photo Model</p>
                     </div>
                   )}
                 </div>
