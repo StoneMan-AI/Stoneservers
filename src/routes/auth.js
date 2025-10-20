@@ -32,56 +32,50 @@ router.get(
     try {
       console.log('🔐 Google 登录回调开始，用户:', req.user ? req.user.email : '无用户信息');
       
-      // 登录成功后，先保存 session
-      req.session.save(async (err) => {
-        if (err) {
-          console.error('❌ Session 保存失败:', err);
-          return res.redirect('/');
-        }
+      console.log('✅ 用户登录成功，用户:', req.user.email);
+      
+      // 检查用户订阅状态
+      const { query } = require('../database/db');
+      const userResult = await query(
+        'SELECT email, subscription_status, subscription_expiry FROM users WHERE email = $1',
+        [req.user.email]
+      );
+      
+      if (userResult.rows.length > 0) {
+        const user = userResult.rows[0];
+        console.log('🔍 数据库查询结果:', {
+          user: user,
+          hasEmail: !!user.email,
+          emailValue: user.email
+        });
         
-        console.log('✅ Session 保存成功，用户:', req.user.email);
+        const hasActiveSubscription = user.subscription_status === 'active' && 
+          (user.subscription_expiry === null || new Date(user.subscription_expiry) > new Date());
         
-        // 检查用户订阅状态
-        const { query } = require('../database/db');
-        const userResult = await query(
-          'SELECT subscription_status, subscription_expiry FROM users WHERE email = $1',
-          [req.user.email]
-        );
+        console.log('🔍 用户订阅状态检查:', {
+          email: user.email,
+          subscription_status: user.subscription_status,
+          subscription_expiry: user.subscription_expiry,
+          hasActiveSubscription: hasActiveSubscription,
+          currentTime: new Date().toISOString()
+        });
         
-        if (userResult.rows.length > 0) {
-          const user = userResult.rows[0];
-          console.log('🔍 数据库查询结果:', {
-            user: user,
-            hasEmail: !!user.email,
-            emailValue: user.email
-          });
-          
-          const hasActiveSubscription = user.subscription_status === 'active' && 
-            (user.subscription_expiry === null || new Date(user.subscription_expiry) > new Date());
-          
-          console.log('🔍 用户订阅状态检查:', {
-            email: user.email,
-            subscription_status: user.subscription_status,
-            subscription_expiry: user.subscription_expiry,
-            hasActiveSubscription: hasActiveSubscription,
-            currentTime: new Date().toISOString()
-          });
-          
-          if (hasActiveSubscription) {
-            // 用户已订阅，跳转到 AI 生图页面
-            console.log('✅ 用户已订阅，跳转到 AI 生图页面');
-            res.redirect('/ai-generator');
-          } else {
-            // 用户未订阅，跳转到首页并定位到 Pricing 模块
-            console.log('❌ 用户未订阅，跳转到首页 Pricing 模块');
-            res.redirect('/#pricing');
-          }
+        if (hasActiveSubscription) {
+          // 用户已订阅，跳转到 AI 生图页面
+          console.log('✅ 用户已订阅，跳转到 AI 生图页面');
+          console.log('🔗 执行重定向到: /ai-generator');
+          res.redirect('/ai-generator');
         } else {
-          // 用户不存在，跳转到首页并定位到 Pricing 模块
-          console.log('❌ 用户不存在，跳转到首页 Pricing 模块');
+          // 用户未订阅，跳转到首页并定位到 Pricing 模块
+          console.log('❌ 用户未订阅，跳转到首页 Pricing 模块');
+          console.log('🔗 执行重定向到: /#pricing');
           res.redirect('/#pricing');
         }
-      });
+      } else {
+        // 用户不存在，跳转到首页并定位到 Pricing 模块
+        console.log('❌ 用户不存在，跳转到首页 Pricing 模块');
+        res.redirect('/#pricing');
+      }
     } catch (error) {
       console.error('❌ 检查订阅状态失败:', error);
       res.redirect('/#pricing');
