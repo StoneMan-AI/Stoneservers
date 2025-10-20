@@ -106,7 +106,7 @@ app.use(
     name: 'stoneservers.sid', // 自定义 session cookie 名称
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
     resave: false,
-    saveUninitialized: false, // 只在登录后保存 session
+    saveUninitialized: true, // 允许保存未初始化的 session，确保 Passport 数据被保存
     rolling: true, // 每次请求都重新设置 cookie，保持活跃
     cookie: {
       secure: process.env.NODE_ENV === 'production', // 生产环境使用 HTTPS
@@ -145,6 +145,7 @@ app.use((req, res, next) => {
     userEmail: req.user ? req.user.email : null,
     cookies: req.headers.cookie ? '已设置' : '未设置',
     sessionData: req.session ? Object.keys(req.session) : '无 session',
+    sessionContent: req.session ? req.session : null,
     cookieHeader: req.headers.cookie,
     sessionStore: req.sessionStore ? '已连接' : '未连接'
   });

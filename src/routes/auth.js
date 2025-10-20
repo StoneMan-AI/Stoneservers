@@ -34,6 +34,10 @@ router.get(
       
       console.log('✅ 用户登录成功，用户:', req.user.email);
       
+      // 确保 session 被标记为已修改，强制保存 Passport 数据
+      req.session.touch();
+      console.log('🔧 强制标记 session 为已修改');
+      
       // 检查用户订阅状态
       const { query } = require('../database/db');
       const userResult = await query(
