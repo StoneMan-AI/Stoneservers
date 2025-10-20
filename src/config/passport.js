@@ -4,15 +4,23 @@ const User = require('../models/User');
 
 // 序列化用户
 passport.serializeUser((user, done) => {
+  console.log('💾 Passport 序列化用户:', user.email);
   done(null, user.email);
 });
 
 // 反序列化用户
 passport.deserializeUser(async (email, done) => {
   try {
+    console.log('🔄 Passport 反序列化用户:', email);
     const user = await User.findByEmail(email);
+    if (user) {
+      console.log('✅ 用户反序列化成功:', user.email);
+    } else {
+      console.log('❌ 用户反序列化失败 - 用户不存在:', email);
+    }
     done(null, user);
   } catch (error) {
+    console.error('❌ 用户反序列化错误:', error);
     done(error, null);
   }
 });

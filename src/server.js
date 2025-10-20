@@ -123,6 +123,19 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Passport 调试中间件
+app.use((req, res, next) => {
+  if (req.session && req.session.passport) {
+    console.log('🔐 Passport Session 数据:', {
+      passport: req.session.passport,
+      user: req.session.passport.user
+    });
+  } else {
+    console.log('❌ Passport Session 数据缺失');
+  }
+  next();
+});
+
 // Session 调试中间件
 app.use((req, res, next) => {
   console.log('🍪 Session 调试:', {

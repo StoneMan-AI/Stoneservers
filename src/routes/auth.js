@@ -50,6 +50,12 @@ router.get(
         
         if (userResult.rows.length > 0) {
           const user = userResult.rows[0];
+          console.log('🔍 数据库查询结果:', {
+            user: user,
+            hasEmail: !!user.email,
+            emailValue: user.email
+          });
+          
           const hasActiveSubscription = user.subscription_status === 'active' && 
             (user.subscription_expiry === null || new Date(user.subscription_expiry) > new Date());
           
