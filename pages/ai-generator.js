@@ -396,7 +396,7 @@ export default function AIGenerator() {
 
           {/* Photo Model 界面 */}
           {activeTab === 'photo-model' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid gap-8" style={{ gridTemplateColumns: '2fr 3fr' }}>
               {/* 左侧：Model 管理栏 */}
               <div className="space-y-6">
                 {/* Model 列表选择器 */}
@@ -841,7 +841,7 @@ export default function AIGenerator() {
                     <div>
                       {/* 显示通过 Photo AI 生成的图片 */}
                       {selectedModel.generatedPhotos && selectedModel.generatedPhotos.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                           {selectedModel.generatedPhotos.map((photo, index) => (
                             <div key={index} className="relative">
                               <img
