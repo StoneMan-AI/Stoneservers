@@ -4,6 +4,8 @@ const passport = require('./config/passport');
 const cors = require('cors');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
 const pgSession = require('connect-pg-simple')(session);
 require('dotenv').config();
 
@@ -96,6 +98,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // 静态文件服务
 app.use(express.static('public'));
+// Ensure uploads directories exist and expose /uploads as static
+try {
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  const modelsDir = path.join(uploadsDir, 'models');
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+  if (!fs.existsSync(modelsDir)) fs.mkdirSync(modelsDir, { recursive: true });
+} catch (e) {
+  console.error('创建上传目录失败:', e);
+}
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // 信任反向代理（Nginx），以便在 HTTPS 终止后正确识别 secure Cookie
 app.set('trust proxy', 1);

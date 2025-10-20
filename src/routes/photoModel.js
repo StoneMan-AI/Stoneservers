@@ -1,6 +1,24 @@
 const express = require('express');
 const { query } = require('../database/db');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
+
+// Multer storage config: save to /uploads/models (mounted COS path)
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dest = path.join(process.cwd(), 'uploads', 'models');
+    if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+    cb(null, dest);
+  },
+  filename: function (req, file, cb) {
+    const unique = Date.now() + '_' + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, unique + ext);
+  }
+});
+const upload = multer({ storage });
 
 // 中间件：检查用户认证
 const requireAuth = (req, res, next) => {
@@ -33,6 +51,24 @@ router.get('/models', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('获取 Photo Models 失败:', error);
     res.status(500).json({ success: false, message: '服务器错误' });
+  }
+});
+
+// 上传训练图片，返回可访问的相对路径 /uploads/models/xxx
+router.post('/models/upload', requireAuth, upload.array('photos', 100), async (req, res) => {
+  try {
+    const files = req.files || [];
+    const mapped = files.map((f, idx) => ({
+      name: f.originalname,
+      path: `/uploads/models/${path.basename(f.path)}`,
+      size: f.size,
+      type: f.mimetype,
+      uploadOrder: idx + 1,
+    }));
+    res.json({ success: true, files: mapped });
+  } catch (error) {
+    console.error('上传图片失败:', error);
+    res.status(500).json({ success: false, message: 'Upload failed' });
   }
 });
 

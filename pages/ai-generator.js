@@ -130,14 +130,20 @@ export default function AIGenerator() {
         })
       }, 200)
 
-      // 准备照片数据
-      const photosData = uploadedPhotos.map((file, index) => ({
-        name: file.name,
-        path: `/uploads/models/${Date.now()}_${file.name}`, // 实际应该上传到对象存储
-        size: file.size,
-        type: file.type,
-        uploadOrder: index + 1
-      }))
+      // 先真实上传图片到服务器
+      const formData = new FormData()
+      uploadedPhotos.forEach(file => formData.append('photos', file))
+      const uploadRes = await fetch('/api/photo-models/models/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}))
+        throw new Error(err.message || 'Upload Photos Failed')
+      }
+      const uploadJson = await uploadRes.json()
+      const photosData = uploadJson.files || []
 
       // 调用后端 API 创建模型
       const response = await fetch('/api/photo-models/models', {
