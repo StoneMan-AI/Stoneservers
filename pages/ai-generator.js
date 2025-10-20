@@ -28,6 +28,7 @@ export default function AIGenerator() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [showModelList, setShowModelList] = useState(false)
+  const [isCreatingNewModelUI, setIsCreatingNewModelUI] = useState(false)
   const modelListRef = useRef(null)
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
   const [showEyeColorDropdown, setShowEyeColorDropdown] = useState(false)
@@ -205,12 +206,14 @@ export default function AIGenerator() {
   const handleModelSelect = (model) => {
     setSelectedModel(model)
     setShowModelList(false)
+    setIsCreatingNewModelUI(false)
   }
 
   // 创建新模型
   const handleCreateNewModel = () => {
     setSelectedModel(null)
     setShowModelList(false)
+    setIsCreatingNewModelUI(true)
   }
 
   // 点击下拉框外部收起
@@ -305,12 +308,12 @@ export default function AIGenerator() {
 
   // 初始化时默认选中最近创建的模型
   useEffect(() => {
-    if (models.length > 0 && !selectedModel) {
+    if (models.length > 0 && !selectedModel && !isCreatingNewModelUI) {
       // 按创建时间排序，选择最新的模型
       const sortedModels = [...models].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       setSelectedModel(sortedModels[0])
     }
-  }, [models, selectedModel])
+  }, [models, selectedModel, isCreatingNewModelUI])
 
   if (isChecking) {
     return (
@@ -425,7 +428,7 @@ export default function AIGenerator() {
                       </div>
 
                       {showModelList && (
-                        <div ref={modelListRef} className="absolute z-20 mt-2 w-full border border-gray-600 rounded-md bg-gray-800 shadow-xl" style={{maxHeight: '14rem', overflowY: 'auto'}}>
+                        <div ref={modelListRef} className="absolute z-20 mt-2 border border-gray-600 rounded-md bg-gray-800 shadow-xl" style={{maxHeight: '14rem', overflowY: 'auto', minWidth: '16rem', width: 'auto'}}>
                           {/* 创建新Model按钮在列表顶部 */}
                           <button
                             onClick={handleCreateNewModel}
