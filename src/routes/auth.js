@@ -45,6 +45,11 @@ router.get(
             console.error('❌ Session 保存失败:', err);
           } else {
             console.log('✅ Session 保存成功，Passport 数据已保存');
+            console.log('🔍 当前 Session 内容:', {
+              sessionID: req.sessionID,
+              passport: req.session.passport,
+              sessionKeys: Object.keys(req.session)
+            });
           }
           resolve();
         });
@@ -80,12 +85,13 @@ router.get(
           // 用户已订阅，跳转到 AI 生图页面
           console.log('✅ 用户已订阅，跳转到 AI 生图页面');
           console.log('🔗 执行重定向到: /ai-generator');
-          res.redirect('/ai-generator');
+          // 重定向到前端，但携带认证状态
+          res.redirect(`${process.env.FRONTEND_URL}/ai-generator?auth=success`);
         } else {
           // 用户未订阅，跳转到首页并定位到 Pricing 模块
           console.log('❌ 用户未订阅，跳转到首页 Pricing 模块');
           console.log('🔗 执行重定向到: /#pricing');
-          res.redirect('/#pricing');
+          res.redirect(`${process.env.FRONTEND_URL}/#pricing`);
         }
       } else {
         // 用户不存在，跳转到首页并定位到 Pricing 模块
@@ -163,6 +169,33 @@ router.get('/check', (req, res) => {
       subscriptionStatus: req.user.subscription_status,
     } : null,
   });
+});
+
+// 检查用户认证状态（用于前端页面）
+router.get('/check', (req, res) => {
+  console.log('🔍 认证状态检查:', {
+    isAuthenticated: req.isAuthenticated(),
+    hasUser: !!req.user,
+    userEmail: req.user ? req.user.email : null,
+    sessionID: req.sessionID,
+    sessionData: req.session ? Object.keys(req.session) : '无 session'
+  });
+  
+  if (req.isAuthenticated() && req.user) {
+    res.json({
+      success: true,
+      authenticated: true,
+      user: {
+        email: req.user.email
+      }
+    });
+  } else {
+    res.json({
+      success: false,
+      authenticated: false,
+      message: '用户未登录'
+    });
+  }
 });
 
 module.exports = router;

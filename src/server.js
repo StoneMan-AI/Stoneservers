@@ -106,7 +106,7 @@ app.use(
     name: 'stoneservers.sid', // 自定义 session cookie 名称
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
     resave: false,
-    saveUninitialized: true, // 允许保存未初始化的 session，确保 Passport 数据被保存
+    saveUninitialized: false, // 只在 session 被修改后保存
     rolling: false, // 禁用 rolling 模式，避免每次请求都创建新 session
     cookie: {
       secure: process.env.NODE_ENV === 'production', // 生产环境使用 HTTPS
@@ -132,6 +132,11 @@ app.use((req, res, next) => {
     });
   } else {
     console.log('❌ Passport Session 数据缺失');
+    console.log('🔍 Session 调试详情:', {
+      hasSession: !!req.session,
+      sessionKeys: req.session ? Object.keys(req.session) : '无 session',
+      sessionContent: req.session ? req.session : null
+    });
   }
   next();
 });

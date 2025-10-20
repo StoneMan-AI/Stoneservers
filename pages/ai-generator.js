@@ -56,17 +56,38 @@ export default function AIGenerator() {
     // 检查用户登录状态和订阅状态
     const checkAuthAndSubscription = async () => {
       try {
-        const response = await fetch('/auth/user', {
+        // 首先检查认证状态
+        const authResponse = await fetch('/auth/check', {
           credentials: 'include'
         })
         
-        if (!response.ok) {
-          // 用户未登录，跳转到首页
+        if (!authResponse.ok) {
+          console.log('❌ 认证检查失败，跳转到首页')
           router.push('/')
           return
         }
         
-        const userData = await response.json()
+        const authData = await authResponse.json()
+        console.log('🔍 认证检查结果:', authData)
+        
+        if (!authData.authenticated) {
+          console.log('❌ 用户未认证，跳转到首页')
+          router.push('/')
+          return
+        }
+        
+        // 如果认证成功，获取完整的用户信息
+        const userResponse = await fetch('/auth/user', {
+          credentials: 'include'
+        })
+        
+        if (!userResponse.ok) {
+          console.log('❌ 获取用户信息失败，跳转到首页')
+          router.push('/')
+          return
+        }
+        
+        const userData = await userResponse.json()
         setUser(userData)
         
         console.log('🔍 AI Generator 页面 - 用户信息:', {
