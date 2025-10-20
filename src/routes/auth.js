@@ -85,7 +85,7 @@ router.get(
           // 用户已订阅，跳转到 AI 生图页面
           console.log('✅ 用户已订阅，跳转到 AI 生图页面');
           console.log('🔗 执行重定向到: /ai-generator');
-          // 重定向到前端，但携带认证状态
+          // 直接重定向到前端，携带认证状态
           res.redirect(`${process.env.FRONTEND_URL}/ai-generator?auth=success`);
         } else {
           // 用户未订阅，跳转到首页并定位到 Pricing 模块
@@ -197,6 +197,7 @@ router.get('/check', (req, res) => {
     });
   }
 });
+
 
 module.exports = router;
 
