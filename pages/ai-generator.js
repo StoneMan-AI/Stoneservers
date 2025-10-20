@@ -119,27 +119,43 @@ export default function AIGenerator() {
         })
       }, 200)
 
-      // 模拟创建模型 API 调用
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // 准备照片数据
+      const photosData = uploadedPhotos.map((file, index) => ({
+        name: file.name,
+        path: `/uploads/models/${Date.now()}_${file.name}`, // 实际应该上传到对象存储
+        size: file.size,
+        type: file.type,
+        uploadOrder: index + 1
+      }))
 
-      // 创建新模型对象
-      const newModel = {
-        id: Date.now(),
-        name: modelForm.name,
-        type: modelForm.type,
-        age: modelForm.age,
-        eyeColor: modelForm.eyeColor,
-        bodyType: modelForm.bodyType,
-        ethnicity: modelForm.ethnicity,
-        photos: uploadedPhotos,
-        createdAt: new Date().toISOString(),
-        basePrompt: `AI Model for ${modelForm.name}: ${modelForm.type}, ${modelForm.age} years old, ${modelForm.eyeColor} eyes, ${modelForm.bodyType} body type, ${modelForm.ethnicity} ethnicity.`
+      // 调用后端 API 创建模型
+      const response = await fetch('/api/photo-models/models', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: modelForm.name,
+          type: modelForm.type,
+          age: modelForm.age,
+          eyeColor: modelForm.eyeColor,
+          bodyType: modelForm.bodyType,
+          ethnicity: modelForm.ethnicity,
+          photos: photosData
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || '创建模型失败')
       }
 
-      // 更新模型列表
-      setModels(prev => [newModel, ...prev])
-      setSelectedModel(newModel)
+      const result = await response.json()
       setUploadProgress(100)
+
+      // 重新加载模型列表
+      await loadModels()
 
       // 重置表单
       setModelForm({
@@ -152,7 +168,7 @@ export default function AIGenerator() {
       })
       setUploadedPhotos([])
 
-      alert('Photo Model 创建成功！')
+      alert('Photo Model 创建成功！基础 Prompt 已生成，可以开始使用 Photo AI 功能。')
     } catch (error) {
       console.error('创建模型失败:', error)
       alert('创建模型失败: ' + error.message)
@@ -160,6 +176,27 @@ export default function AIGenerator() {
       setIsCreatingModel(false)
       setIsUploading(false)
       setUploadProgress(0)
+    }
+  }
+
+  // 加载用户的 Photo Models
+  const loadModels = async () => {
+    try {
+      const response = await fetch('/api/photo-models/models', {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setModels(result.models)
+        
+        // 如果有模型且没有选中，默认选中最新的
+        if (result.models.length > 0 && !selectedModel) {
+          setSelectedModel(result.models[0])
+        }
+      }
+    } catch (error) {
+      console.error('加载模型列表失败:', error)
     }
   }
 
@@ -242,6 +279,9 @@ export default function AIGenerator() {
         
         console.log('✅ 用户已认证且已订阅，可以访问 AI Generator')
         setIsChecking(false)
+        
+        // 加载用户的 Photo Models
+        await loadModels()
       } catch (error) {
         console.error('❌ 检查认证状态失败:', error)
         router.push('/')
@@ -250,6 +290,15 @@ export default function AIGenerator() {
 
     checkAuthAndSubscription()
   }, [router])
+
+  // 初始化时默认选中最近创建的模型
+  useEffect(() => {
+    if (models.length > 0 && !selectedModel) {
+      // 按创建时间排序，选择最新的模型
+      const sortedModels = [...models].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      setSelectedModel(sortedModels[0])
+    }
+  }, [models, selectedModel])
 
   if (isChecking) {
     return (
@@ -371,6 +420,20 @@ export default function AIGenerator() {
 
                       {showModelList && (
                         <div className="border border-gray-600 rounded-md max-h-48 overflow-y-auto bg-gray-800">
+                          {/* 创建新Model按钮在列表顶部 */}
+                          <button
+                            onClick={handleCreateNewModel}
+                            className="w-full text-left p-3 hover:bg-gray-700 border-b border-gray-600 bg-orange-900"
+                          >
+                            <div className="font-medium text-white flex items-center">
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                              创建新 Model
+                            </div>
+                          </button>
+                          
+                          {/* 现有模型列表 */}
                           {models.map((model) => (
                             <button
                               key={model.id}
@@ -382,6 +445,9 @@ export default function AIGenerator() {
                               <div className="font-medium text-white">{model.name}</div>
                               <div className="text-sm text-gray-400">
                                 {model.type} • {model.age}岁 • {model.eyeColor}眼睛
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                创建于 {new Date(model.createdAt).toLocaleDateString()}
                               </div>
                             </button>
                           ))}
@@ -669,10 +735,33 @@ export default function AIGenerator() {
                       </div>
                     )}
 
+                    {/* 配额检查提示 */}
+                    {user && user.modelQuota <= 0 && (
+                      <div className="mt-4 p-4 bg-red-900 border border-red-600 rounded-md">
+                        <div className="flex items-center">
+                          <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                          <div>
+                            <h4 className="font-medium text-red-300">模型配额已用完</h4>
+                            <p className="text-sm text-red-200 mt-1">
+                              您的模型配额已全部消耗，请升级订阅套餐以创建更多模型。
+                            </p>
+                            <button
+                              onClick={() => handleSubscribe('pro')}
+                              className="mt-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm font-medium"
+                            >
+                              立即升级
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* 创建 Model 按钮 */}
                     <button
                       onClick={handleCreateModel}
-                      disabled={isCreatingModel || isUploading}
+                      disabled={isCreatingModel || isUploading || (user && user.modelQuota <= 0)}
                       className="w-full mt-6 bg-orange-500 text-black py-3 px-4 rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
                       {isCreatingModel ? '创建中...' : 'Create model (~60min)'}
@@ -727,16 +816,47 @@ export default function AIGenerator() {
               {/* 右侧：展示栏 */}
               <div className="space-y-6">
                 <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-                  <h3 className="text-lg font-medium text-white mb-4">
-                    {selectedModel ? `${selectedModel.name} 生成的图片` : '图片展示'}
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-white">
+                      {selectedModel ? `${selectedModel.name} 生成的图片` : '图片展示'}
+                    </h3>
+                    {selectedModel && (
+                      <div className="flex items-center space-x-4 text-sm text-gray-400">
+                        <span>照片数量: {selectedModel.photoCount}</span>
+                        <span>生成图片: {selectedModel.generatedPhotos?.length || 0}</span>
+                      </div>
+                    )}
+                  </div>
                   
                   {selectedModel ? (
-                    <div className="text-center py-12">
-                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <p className="mt-2 text-gray-400">使用 Photo AI 生成图片后，将在这里显示</p>
+                    <div>
+                      {/* 显示通过 Photo AI 生成的图片 */}
+                      {selectedModel.generatedPhotos && selectedModel.generatedPhotos.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-4">
+                          {selectedModel.generatedPhotos.map((photo, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={photo.url}
+                                alt={`Generated ${index + 1}`}
+                                className="w-full h-48 object-cover rounded border border-gray-600"
+                              />
+                              <div className="absolute bottom-2 left-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
+                                {photo.createdAt}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <p className="mt-2 text-gray-400">使用 Photo AI 生成图片后，将在这里显示</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            基础 Prompt: {selectedModel.basePrompt}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="text-center py-12">

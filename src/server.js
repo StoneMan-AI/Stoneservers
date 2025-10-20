@@ -11,6 +11,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const subscriptionRoutes = require('./routes/subscription');
 const usageRoutes = require('./routes/usage');
+const photoModelRoutes = require('./routes/photoModel');
 
 // 导入订阅检查任务
 const SubscriptionChecker = require('./tasks/subscriptionChecker');
@@ -165,6 +166,7 @@ app.use('/auth', authRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/usage', usageRoutes);
 app.use('/api/plans', plansRoutes);
+app.use('/api/photo-models', photoModelRoutes);
 
 // 健康检查
 app.get('/health', (req, res) => {
