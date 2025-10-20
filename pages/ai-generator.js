@@ -437,7 +437,7 @@ export default function AIGenerator() {
                       </div>
 
                       {showModelList && (
-                        <div ref={modelListRef} className="absolute z-20 mt-2 border border-gray-600 rounded-md bg-gray-800 shadow-xl" style={{maxHeight: '14rem', overflowY: 'auto', width: '100%'}}>
+                        <div ref={modelListRef} className="absolute z-20 mt-2 border border-gray-600 rounded-md bg-gray-800 shadow-xl" style={{maxHeight: '14rem', overflowY: 'auto', width: '22rem'}}>
                           {/* 创建新Model按钮在列表顶部 */}
                           <button
                             onClick={handleCreateNewModel}
@@ -462,7 +462,7 @@ export default function AIGenerator() {
                             >
                               <div className="font-medium text-white">{model.name}</div>
                               <div className="text-sm text-gray-400">
-                                {model.type} • {model.age} yrs • {model.eyeColor} eyes
+                                {model.type} • {model.age} yrs • {(model.eyeColor || model.eye_color) || '-'} eyes
                               </div>
                               <div className="text-xs text-gray-500">
                                 Created {formatDate(model.createdAt || model.created_at)}
@@ -504,7 +504,7 @@ export default function AIGenerator() {
                             onClick={() => setShowTypeDropdown(!showTypeDropdown)}
                             className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white text-left focus:outline-none focus:ring-2 focus:ring-orange-500"
                           >
-                            {modelForm.type || '选择类型'}
+                            {modelForm.type || 'Select Type'}
                           </button>
                           {showTypeDropdown && (
                             <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg">
@@ -534,7 +534,7 @@ export default function AIGenerator() {
                           value={modelForm.age}
                           onChange={(e) => handleModelFormChange('age', e.target.value)}
                           className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          placeholder="年龄"
+                          placeholder="Age"
                           min="1"
                           max="100"
                         />
@@ -549,7 +549,7 @@ export default function AIGenerator() {
                             onClick={() => setShowEyeColorDropdown(!showEyeColorDropdown)}
                             className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white text-left focus:outline-none focus:ring-2 focus:ring-orange-500"
                           >
-                            {modelForm.eyeColor || '选择眼睛颜色'}
+                            {modelForm.eyeColor || 'Select Eye Color'}
                           </button>
                           {showEyeColorDropdown && (
                             <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg">
@@ -580,7 +580,7 @@ export default function AIGenerator() {
                             onClick={() => setShowBodyTypeDropdown(!showBodyTypeDropdown)}
                             className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white text-left focus:outline-none focus:ring-2 focus:ring-orange-500"
                           >
-                            {modelForm.bodyType || '选择体型'}
+                            {modelForm.bodyType || 'Select Body Type'}
                           </button>
                           {showBodyTypeDropdown && (
                             <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg">
@@ -611,7 +611,7 @@ export default function AIGenerator() {
                             onClick={() => setShowEthnicityDropdown(!showEthnicityDropdown)}
                             className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white text-left focus:outline-none focus:ring-2 focus:ring-orange-500"
                           >
-                            {modelForm.ethnicity || '选择种族'}
+                            {modelForm.ethnicity || 'Select Ethnicity'}
                           </button>
                           {showEthnicityDropdown && (
                             <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg">
@@ -806,11 +806,11 @@ export default function AIGenerator() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Eye color:</span>
-                        <span className="text-white">{selectedModel.eyeColor}</span>
+                        <span className="text-white">{selectedModel.eyeColor || selectedModel.eye_color || '-'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Body type:</span>
-                        <span className="text-white">{selectedModel.bodyType}</span>
+                        <span className="text-white">{selectedModel.bodyType || selectedModel.body_type || '-'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Ethnicity:</span>
