@@ -1,5 +1,5 @@
 import Head from 'next/head'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/router'
 
 export default function AIGenerator() {
@@ -28,6 +28,7 @@ export default function AIGenerator() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [showModelList, setShowModelList] = useState(false)
+  const modelListRef = useRef(null)
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
   const [showEyeColorDropdown, setShowEyeColorDropdown] = useState(false)
   const [showBodyTypeDropdown, setShowBodyTypeDropdown] = useState(false)
@@ -212,6 +213,17 @@ export default function AIGenerator() {
     setShowModelList(false)
   }
 
+  // 点击下拉框外部收起
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showModelList && modelListRef.current && !modelListRef.current.contains(event.target)) {
+        setShowModelList(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showModelList])
+
   useEffect(() => {
     // 检查 URL 参数，看是否是支付成功后的跳转
     const { payment, session_id, auth } = router.query
@@ -385,7 +397,7 @@ export default function AIGenerator() {
               {/* 左侧：Model 管理栏 */}
               <div className="space-y-6">
                 {/* Model 列表选择器 */}
-                <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                <div className="bg-gray-800 rounded-lg border border-gray-700 p-6" style={{maxHeight: 'calc(100vh - 240px)', overflowY: 'auto'}}>
                   <h3 className="text-lg font-medium text-white mb-4">Model 管理</h3>
                   
                   {models.length === 0 ? (
@@ -400,7 +412,7 @@ export default function AIGenerator() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between relative">
                         <button
                           onClick={() => setShowModelList(!showModelList)}
                           className="flex items-center justify-between w-full p-3 border border-gray-600 rounded-md hover:bg-gray-700 bg-gray-800"
@@ -410,16 +422,10 @@ export default function AIGenerator() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
                         </button>
-                        <button
-                          onClick={handleCreateNewModel}
-                          className="ml-2 bg-orange-500 text-black px-3 py-2 rounded-md hover:bg-orange-600 text-sm font-medium"
-                        >
-                          新建
-                        </button>
                       </div>
 
                       {showModelList && (
-                        <div className="border border-gray-600 rounded-md max-h-48 overflow-y-auto bg-gray-800">
+                        <div ref={modelListRef} className="absolute z-20 mt-2 w-full border border-gray-600 rounded-md bg-gray-800 shadow-xl" style={{maxHeight: '14rem', overflowY: 'auto'}}>
                           {/* 创建新Model按钮在列表顶部 */}
                           <button
                             onClick={handleCreateNewModel}
@@ -429,12 +435,12 @@ export default function AIGenerator() {
                               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                               </svg>
-                              创建新 Model
+                              + Create New Model
                             </div>
                           </button>
                           
                           {/* 现有模型列表 */}
-                          {models.map((model) => (
+                          {models.slice(0, 4).map((model) => (
                             <button
                               key={model.id}
                               onClick={() => handleModelSelect(model)}
@@ -771,7 +777,7 @@ export default function AIGenerator() {
 
                 {/* 选中 Model 的属性显示 */}
                 {selectedModel && (
-                  <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                  <div className="bg-gray-800 rounded-lg border border-gray-700 p-6" style={{maxHeight: 'calc(100vh - 240px)', overflowY: 'auto'}}>
                     <h3 className="text-lg font-medium text-white mb-4">Model 属性</h3>
                     <div className="space-y-3">
                       <div className="flex justify-between">
@@ -815,7 +821,7 @@ export default function AIGenerator() {
 
               {/* 右侧：展示栏 */}
               <div className="space-y-6">
-                <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                <div className="bg-gray-800 rounded-lg border border-gray-700 p-6" style={{maxHeight: 'calc(100vh - 240px)', overflowY: 'auto'}}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium text-white">
                       {selectedModel ? `${selectedModel.name} 生成的图片` : '图片展示'}
