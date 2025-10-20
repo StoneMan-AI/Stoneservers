@@ -8,11 +8,34 @@ export default function AIGenerator() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Photo Model 和 Photo AI 切换状态
+  const [activeTab, setActiveTab] = useState('photo-model')
+  
+  // Photo Model 相关状态
+  const [models, setModels] = useState([])
+  const [selectedModel, setSelectedModel] = useState(null)
+  const [isCreatingModel, setIsCreatingModel] = useState(false)
+  const [modelForm, setModelForm] = useState({
+    name: '',
+    type: '',
+    age: '',
+    eyeColor: '',
+    bodyType: '',
+    ethnicity: ''
+  })
+  const [uploadedPhotos, setUploadedPhotos] = useState([])
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
+  const [showModelList, setShowModelList] = useState(false)
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false)
+  const [showEyeColorDropdown, setShowEyeColorDropdown] = useState(false)
+  const [showBodyTypeDropdown, setShowBodyTypeDropdown] = useState(false)
+  const [showEthnicityDropdown, setShowEthnicityDropdown] = useState(false)
 
   // 处理订阅函数
   const handleSubscribe = async (planId) => {
     if (!user) {
-      // 用户未登录，跳转到 Google 登录
       window.location.href = '/auth/google';
       return;
     }
@@ -43,9 +66,118 @@ export default function AIGenerator() {
     }
   }
 
+  // 处理 Model 表单变化
+  const handleModelFormChange = (field, value) => {
+    setModelForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  // 处理照片上传
+  const handlePhotoUpload = (event) => {
+    const files = Array.from(event.target.files)
+    setUploadedPhotos(prev => [...prev, ...files])
+  }
+
+  // 创建 Photo Model
+  const handleCreateModel = async () => {
+    if (!user) {
+      alert('请先登录')
+      return
+    }
+
+    // 检查用户模型配额
+    if (user.modelQuota <= 0) {
+      alert('您的模型配额已用完，请升级订阅套餐')
+      return
+    }
+
+    if (!modelForm.name || !modelForm.type || !modelForm.age || !modelForm.eyeColor || !modelForm.bodyType || !modelForm.ethnicity) {
+      alert('请填写所有必填字段')
+      return
+    }
+
+    if (uploadedPhotos.length === 0) {
+      alert('请至少上传一张照片')
+      return
+    }
+
+    setIsCreatingModel(true)
+    setIsUploading(true)
+    setUploadProgress(0)
+
+    try {
+      // 模拟上传进度
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval)
+            return prev
+          }
+          return prev + 10
+        })
+      }, 200)
+
+      // 模拟创建模型 API 调用
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // 创建新模型对象
+      const newModel = {
+        id: Date.now(),
+        name: modelForm.name,
+        type: modelForm.type,
+        age: modelForm.age,
+        eyeColor: modelForm.eyeColor,
+        bodyType: modelForm.bodyType,
+        ethnicity: modelForm.ethnicity,
+        photos: uploadedPhotos,
+        createdAt: new Date().toISOString(),
+        basePrompt: `AI Model for ${modelForm.name}: ${modelForm.type}, ${modelForm.age} years old, ${modelForm.eyeColor} eyes, ${modelForm.bodyType} body type, ${modelForm.ethnicity} ethnicity.`
+      }
+
+      // 更新模型列表
+      setModels(prev => [newModel, ...prev])
+      setSelectedModel(newModel)
+      setUploadProgress(100)
+
+      // 重置表单
+      setModelForm({
+        name: '',
+        type: '',
+        age: '',
+        eyeColor: '',
+        bodyType: '',
+        ethnicity: ''
+      })
+      setUploadedPhotos([])
+
+      alert('Photo Model 创建成功！')
+    } catch (error) {
+      console.error('创建模型失败:', error)
+      alert('创建模型失败: ' + error.message)
+    } finally {
+      setIsCreatingModel(false)
+      setIsUploading(false)
+      setUploadProgress(0)
+    }
+  }
+
+  // 选择模型
+  const handleModelSelect = (model) => {
+    setSelectedModel(model)
+    setShowModelList(false)
+  }
+
+  // 创建新模型
+  const handleCreateNewModel = () => {
+    setSelectedModel(null)
+    setShowModelList(false)
+  }
+
   useEffect(() => {
     // 检查 URL 参数，看是否是支付成功后的跳转
-    const { payment, session_id } = router.query
+    const { payment, session_id, auth } = router.query
     
     if (payment === 'success' && session_id) {
       setShowSuccessMessage(true)
@@ -102,24 +234,16 @@ export default function AIGenerator() {
         const hasActiveSubscription = userData.subscriptionStatus === 'active' && 
           (userData.subscriptionExpiry === null || new Date(userData.subscriptionExpiry) > new Date())
         
-        console.log('🔍 AI Generator 页面 - 订阅状态检查:', {
-          hasActiveSubscription: hasActiveSubscription,
-          subscriptionStatus: userData.subscriptionStatus,
-          subscriptionExpiry: userData.subscriptionExpiry,
-          currentTime: new Date().toISOString()
-        })
-        
         if (!hasActiveSubscription) {
-          // 用户未订阅，跳转到首页并定位到 Pricing 模块
+          console.log('❌ 用户未订阅，跳转到首页 Pricing 模块')
           router.push('/#pricing')
           return
         }
         
-        // 用户已登录且已订阅，显示页面
+        console.log('✅ 用户已认证且已订阅，可以访问 AI Generator')
         setIsChecking(false)
       } catch (error) {
-        console.error('检查认证状态失败:', error)
-        // 出错时跳转到首页
+        console.error('❌ 检查认证状态失败:', error)
         router.push('/')
       }
     }
@@ -129,10 +253,10 @@ export default function AIGenerator() {
 
   if (isChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{backgroundColor: '#111'}}>
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p>检查访问权限...</p>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-4 text-white">正在验证用户权限...</p>
         </div>
       </div>
     )
@@ -141,297 +265,505 @@ export default function AIGenerator() {
   return (
     <>
       <Head>
-        <title>AI 生图 - PHOTO AI™</title>
-        <meta name="description" content="AI 生图工具" />
-        <link rel="icon" href="/favicon.ico" />
+        <title>AI Generator - Stoneservers</title>
+        <meta name="description" content="AI 图像生成工具" />
       </Head>
 
-      <div className="min-h-screen text-white" style={{backgroundColor: '#111'}}>
-        <header className="p-4 border-b border-gray-800">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <h1 className="text-2xl font-bold">AI 生图工具</h1>
-            <button 
-              onClick={() => window.location.href = '/auth/logout'}
-              className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors"
-            >
-              退出登录
-            </button>
+      <div className="min-h-screen bg-black text-white">
+        {/* 成功消息 */}
+        {showSuccessMessage && (
+          <div className="bg-green-900 border border-green-600 text-green-300 px-4 py-3 rounded relative mb-4">
+            <span className="block sm:inline">🎉 支付成功！欢迎使用 AI Generator</span>
           </div>
-        </header>
+        )}
 
-        <main className="p-8">
-          <div className="max-w-4xl mx-auto">
-            {/* 支付成功提示 */}
-            {showSuccessMessage && (
-              <div className="bg-green-600 text-white p-4 rounded-lg mb-6 text-center">
-                <div className="flex items-center justify-center space-x-2">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="font-semibold">支付成功！欢迎使用 AI 生图工具</span>
-                </div>
+        {/* 头部导航 */}
+        <div className="bg-gray-900 border-b border-gray-700">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="flex items-center">
+                <h1 className="text-2xl font-bold text-white">PHOTO AI™</h1>
+                <span className="ml-4 text-sm text-gray-400">550K MRR • 639K PHOTOS/MO</span>
               </div>
-            )}
-            
-            <h2 className="text-3xl font-bold mb-8">AI 生图模板页面</h2>
-            <p className="text-gray-300 mb-8">
-              欢迎使用 AI 生图工具！这里将是您的 AI 生图功能页面。
-            </p>
-            
-            {/* AI 生图功能区域 */}
-            <div className="bg-gray-800 rounded-lg p-8 text-center mb-12">
-              <h3 className="text-xl font-semibold mb-4">AI 生图功能</h3>
-              <p className="text-gray-400 mb-6">
-                此页面正在开发中，将包含完整的 AI 生图功能。
-              </p>
-              
-              {/* 用户订阅信息 */}
-              {user && (
-                <div className="bg-gray-700 rounded-lg p-6 mb-8">
-                  <h4 className="text-lg font-semibold mb-4">您的订阅信息</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-400">邮箱:</span>
-                      <p className="text-white">{user.email}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">积分:</span>
-                      <p className="text-white">{user.points || 0}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">模型配额:</span>
-                      <p className="text-white">{user.modelQuota || 0}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Pricing 组件 - 完整代码 */}
-            <div className="py-16 bg-gray-900">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center">
-                  <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-                    升级您的 AI 生图体验
-                  </h2>
-                  <p className="mt-4 text-xl text-gray-300">
-                    选择适合您的套餐，解锁更多 AI 生图功能
-                  </p>
-                </div>
-
-                <div className="mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-8 lg:grid-cols-4 lg:max-w-none">
-                  {/* Basic 套餐 */}
-                  <div className="relative p-8 bg-gray-800 border-2 border-gray-700 rounded-2xl shadow-sm flex flex-col">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-white">Basic</h3>
-                      <p className="mt-4 flex items-baseline text-gray-300">
-                        <span className="text-5xl font-extrabold tracking-tight text-white">
-                          $19
-                        </span>
-                        <span className="text-xl font-semibold">/month</span>
-                      </p>
-                      <p className="mt-6 text-gray-300">
-                        50 积分 + 1 模型/月
-                      </p>
-
-                      <ul className="mt-6 space-y-4">
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">50 积分</span>
-                        </li>
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">1 模型/月</span>
-                        </li>
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">基础支持</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="mt-8">
-                      <button
-                        onClick={() => handleSubscribe('basic_monthly')}
-                        disabled={isLoading}
-                        className={`w-full py-3 px-6 border border-transparent rounded-md text-center text-sm font-medium text-white bg-gray-700 hover:bg-gray-600 transition-colors ${
-                          isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        {isLoading ? '处理中...' : '立即订阅'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Pro 套餐 */}
-                  <div className="relative p-8 bg-gray-800 border-2 border-blue-500 rounded-2xl shadow-sm flex flex-col">
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                      <span className="inline-flex px-4 py-1 text-sm font-semibold text-white bg-blue-500 rounded-full">
-                        最受欢迎
-                      </span>
-                    </div>
-
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-white">Pro</h3>
-                      <p className="mt-4 flex items-baseline text-gray-300">
-                        <span className="text-5xl font-extrabold tracking-tight text-white">
-                          $49
-                        </span>
-                        <span className="text-xl font-semibold">/month</span>
-                      </p>
-                      <p className="mt-6 text-gray-300">
-                        1000 积分 + 3 模型/月
-                      </p>
-
-                      <ul className="mt-6 space-y-4">
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">1000 积分</span>
-                        </li>
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">3 模型/月</span>
-                        </li>
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">优先支持</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="mt-8">
-                      <button
-                        onClick={() => handleSubscribe('pro_monthly')}
-                        disabled={isLoading}
-                        className={`w-full py-3 px-6 border border-transparent rounded-md text-center text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors ${
-                          isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        {isLoading ? '处理中...' : '立即订阅'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Business 套餐 */}
-                  <div className="relative p-8 bg-gray-800 border-2 border-gray-700 rounded-2xl shadow-sm flex flex-col">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-white">Business</h3>
-                      <p className="mt-4 flex items-baseline text-gray-300">
-                        <span className="text-5xl font-extrabold tracking-tight text-white">
-                          $99
-                        </span>
-                        <span className="text-xl font-semibold">/month</span>
-                      </p>
-                      <p className="mt-6 text-gray-300">
-                        3000 积分 + 10 模型/月
-                      </p>
-
-                      <ul className="mt-6 space-y-4">
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">3000 积分</span>
-                        </li>
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">10 模型/月</span>
-                        </li>
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">企业支持</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="mt-8">
-                      <button
-                        onClick={() => handleSubscribe('business_monthly')}
-                        disabled={isLoading}
-                        className={`w-full py-3 px-6 border border-transparent rounded-md text-center text-sm font-medium text-white bg-gray-700 hover:bg-gray-600 transition-colors ${
-                          isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        {isLoading ? '处理中...' : '立即订阅'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Enterprise 套餐 */}
-                  <div className="relative p-8 bg-gray-800 border-2 border-gray-700 rounded-2xl shadow-sm flex flex-col">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-white">Enterprise</h3>
-                      <p className="mt-4 flex items-baseline text-gray-300">
-                        <span className="text-5xl font-extrabold tracking-tight text-white">
-                          $199
-                        </span>
-                        <span className="text-xl font-semibold">/month</span>
-                      </p>
-                      <p className="mt-6 text-gray-300">
-                        10000 积分 + 50 模型/月
-                      </p>
-
-                      <ul className="mt-6 space-y-4">
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">10000 积分</span>
-                        </li>
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">50 模型/月</span>
-                        </li>
-                        <li className="flex">
-                          <svg className="flex-shrink-0 w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="ml-3 text-gray-300">专属支持</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="mt-8">
-                      <button
-                        onClick={() => handleSubscribe('enterprise_monthly')}
-                        disabled={isLoading}
-                        className={`w-full py-3 px-6 border border-transparent rounded-md text-center text-sm font-medium text-white bg-gray-700 hover:bg-gray-600 transition-colors ${
-                          isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        {isLoading ? '处理中...' : '立即订阅'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-12 text-center">
-                  <p className="text-gray-400 text-sm">
-                    所有套餐都包含 24/7 客户支持和 30 天退款保证
-                  </p>
-                </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-400">
+                  欢迎，{user?.email}
+                </span>
+                <span className="text-sm text-gray-400">
+                  模型配额: {user?.modelQuota || 0}
+                </span>
+                <button className="bg-orange-500 text-black px-4 py-2 rounded-md hover:bg-orange-600 text-sm font-medium">
+                  Upgrade
+                </button>
               </div>
             </div>
           </div>
-        </main>
+        </div>
+
+        {/* 主要内容 */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Tab 切换 */}
+          <div className="mb-8">
+            <div className="border-b border-gray-700">
+              <nav className="-mb-px flex space-x-8">
+                <button
+                  onClick={() => setActiveTab('photo-model')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'photo-model'
+                      ? 'border-orange-500 text-orange-400'
+                      : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                  }`}
+                >
+                  Photo Model
+                </button>
+                <button
+                  onClick={() => setActiveTab('photo-ai')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'photo-ai'
+                      ? 'border-orange-500 text-orange-400'
+                      : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                  }`}
+                >
+                  Photo AI
+                </button>
+              </nav>
+            </div>
+          </div>
+
+          {/* Photo Model 界面 */}
+          {activeTab === 'photo-model' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* 左侧：Model 管理栏 */}
+              <div className="space-y-6">
+                {/* Model 列表选择器 */}
+                <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                  <h3 className="text-lg font-medium text-white mb-4">Model 管理</h3>
+                  
+                  {models.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400 mb-4">还没有创建任何 Model</p>
+                      <button
+                        onClick={handleCreateNewModel}
+                        className="bg-orange-500 text-black px-4 py-2 rounded-md hover:bg-orange-600 font-medium"
+                      >
+                        创建新 Model
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <button
+                          onClick={() => setShowModelList(!showModelList)}
+                          className="flex items-center justify-between w-full p-3 border border-gray-600 rounded-md hover:bg-gray-700 bg-gray-800"
+                        >
+                          <span className="text-white">{selectedModel ? selectedModel.name : '选择 Model'}</span>
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={handleCreateNewModel}
+                          className="ml-2 bg-orange-500 text-black px-3 py-2 rounded-md hover:bg-orange-600 text-sm font-medium"
+                        >
+                          新建
+                        </button>
+                      </div>
+
+                      {showModelList && (
+                        <div className="border border-gray-600 rounded-md max-h-48 overflow-y-auto bg-gray-800">
+                          {models.map((model) => (
+                            <button
+                              key={model.id}
+                              onClick={() => handleModelSelect(model)}
+                              className={`w-full text-left p-3 hover:bg-gray-700 ${
+                                selectedModel?.id === model.id ? 'bg-orange-900 border-l-4 border-orange-500' : ''
+                              }`}
+                            >
+                              <div className="font-medium text-white">{model.name}</div>
+                              <div className="text-sm text-gray-400">
+                                {model.type} • {model.age}岁 • {model.eyeColor}眼睛
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Model 属性表单 */}
+                {!selectedModel && (
+                  <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                    <h3 className="text-lg font-medium text-white mb-4">创建 Photo Model</h3>
+                    <p className="text-gray-400 mb-6">The model you create is private and only usable by you.</p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-2">
+                          NAME *
+                        </label>
+                        <input
+                          type="text"
+                          value={modelForm.name}
+                          onChange={(e) => handleModelFormChange('name', e.target.value)}
+                          className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          placeholder="Person's name"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-2">
+                          TYPE *
+                        </label>
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                            className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white text-left focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          >
+                            {modelForm.type || '选择类型'}
+                          </button>
+                          {showTypeDropdown && (
+                            <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg">
+                              {['Man', 'Woman', 'Couple / Two people', 'Dog', 'Cat', 'Other'].map((type) => (
+                                <button
+                                  key={type}
+                                  onClick={() => {
+                                    handleModelFormChange('type', type)
+                                    setShowTypeDropdown(false)
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-white hover:bg-gray-700"
+                                >
+                                  {type}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-2">
+                          AGE *
+                        </label>
+                        <input
+                          type="number"
+                          value={modelForm.age}
+                          onChange={(e) => handleModelFormChange('age', e.target.value)}
+                          className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          placeholder="年龄"
+                          min="1"
+                          max="100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-2">
+                          EYE COLOR *
+                        </label>
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowEyeColorDropdown(!showEyeColorDropdown)}
+                            className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white text-left focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          >
+                            {modelForm.eyeColor || '选择眼睛颜色'}
+                          </button>
+                          {showEyeColorDropdown && (
+                            <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg">
+                              {['Brown', 'Blue', 'Hazel', 'Green', 'Gray'].map((color) => (
+                                <button
+                                  key={color}
+                                  onClick={() => {
+                                    handleModelFormChange('eyeColor', color)
+                                    setShowEyeColorDropdown(false)
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-white hover:bg-gray-700 flex items-center"
+                                >
+                                  {modelForm.eyeColor === color && <span className="mr-2">✓</span>}
+                                  {color}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-2">
+                          BODY TYPE *
+                        </label>
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowBodyTypeDropdown(!showBodyTypeDropdown)}
+                            className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white text-left focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          >
+                            {modelForm.bodyType || '选择体型'}
+                          </button>
+                          {showBodyTypeDropdown && (
+                            <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg">
+                              {['Skinny', 'Slim', 'Athletic', 'Muscular', 'Curvy', 'Overweight', 'Obese'].map((type) => (
+                                <button
+                                  key={type}
+                                  onClick={() => {
+                                    handleModelFormChange('bodyType', type)
+                                    setShowBodyTypeDropdown(false)
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-white hover:bg-gray-700 flex items-center"
+                                >
+                                  {modelForm.bodyType === type && <span className="mr-2">✓</span>}
+                                  {type}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-2">
+                          ETHNICITY *
+                        </label>
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowEthnicityDropdown(!showEthnicityDropdown)}
+                            className="w-full bg-gray-900 border-2 border-orange-500 rounded-md px-3 py-2 text-white text-left focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          >
+                            {modelForm.ethnicity || '选择种族'}
+                          </button>
+                          {showEthnicityDropdown && (
+                            <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg">
+                              {['White', 'Black', 'East Asian (Chinese, Japanese, Korean)', 'South East Asian (Thai, Indonesian)', 'South Asian (Indian)', 'Hispanic', 'Mixed'].map((ethnicity) => (
+                                <button
+                                  key={ethnicity}
+                                  onClick={() => {
+                                    handleModelFormChange('ethnicity', ethnicity)
+                                    setShowEthnicityDropdown(false)
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-white hover:bg-gray-700 flex items-center"
+                                >
+                                  {modelForm.ethnicity === ethnicity && <span className="mr-2">✓</span>}
+                                  {ethnicity}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 照片上传区域 */}
+                {!selectedModel && (
+                  <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                    <h3 className="text-lg font-medium text-white mb-4">SELECT 25+ PHOTOS</h3>
+                    
+                    {/* Good Photos 示例说明 */}
+                    <div className="mb-6 p-4 bg-green-900 border border-green-600 rounded-md">
+                      <div className="flex items-center mb-2">
+                        <span className="text-green-400 mr-2">✓</span>
+                        <h4 className="font-medium text-green-300">Good photos</h4>
+                      </div>
+                      <p className="text-sm text-green-200 mb-3">
+                        High variety, mix of close-up selfies and full body shots in a variety of places, angles, clothes and expressions.
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                          <span className="text-xs text-gray-400">示例图片 1</span>
+                        </div>
+                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                          <span className="text-xs text-gray-400">示例图片 2</span>
+                        </div>
+                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                          <span className="text-xs text-gray-400">示例图片 3</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bad Photos 示例说明 */}
+                    <div className="mb-6 p-4 bg-red-900 border border-red-600 rounded-md">
+                      <div className="flex items-center mb-2">
+                        <span className="text-red-400 mr-2">✗</span>
+                        <h4 className="font-medium text-red-300">Bad photos</h4>
+                      </div>
+                      <p className="text-sm text-red-200 mb-3">
+                        Low variety, group photos, other people, sunglasses, hats, face cut off or not visible.
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                          <span className="text-xs text-gray-400">示例图片 1</span>
+                        </div>
+                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                          <span className="text-xs text-gray-400">示例图片 2</span>
+                        </div>
+                        <div className="bg-gray-700 h-16 rounded flex items-center justify-center">
+                          <span className="text-xs text-gray-400">示例图片 3</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 文件上传控件 */}
+                    <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        id="photo-upload"
+                      />
+                      <label
+                        htmlFor="photo-upload"
+                        className="cursor-pointer block"
+                      >
+                        <div className="flex items-center justify-center mb-4">
+                          <svg className="w-8 h-8 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          <span className="text-white text-lg">Select at least 25 photos of yourself</span>
+                        </div>
+                        <p className="text-gray-400 text-sm">
+                          Hold ⇧ to select multiple files
+                        </p>
+                      </label>
+                    </div>
+
+                    {/* 已上传照片预览 */}
+                    {uploadedPhotos.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-white mb-2">
+                          已选择 {uploadedPhotos.length} 张照片：
+                        </h4>
+                        <div className="grid grid-cols-4 gap-2">
+                          {uploadedPhotos.map((file, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={`Upload ${index + 1}`}
+                                className="w-full h-20 object-cover rounded border border-gray-600"
+                              />
+                              <button
+                                onClick={() => setUploadedPhotos(prev => prev.filter((_, i) => i !== index))}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 上传进度 */}
+                    {isUploading && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+                          <span>上传进度</span>
+                          <span>{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div
+                            className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 创建 Model 按钮 */}
+                    <button
+                      onClick={handleCreateModel}
+                      disabled={isCreatingModel || isUploading}
+                      className="w-full mt-6 bg-orange-500 text-black py-3 px-4 rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    >
+                      {isCreatingModel ? '创建中...' : 'Create model (~60min)'}
+                    </button>
+                  </div>
+                )}
+
+                {/* 选中 Model 的属性显示 */}
+                {selectedModel && (
+                  <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                    <h3 className="text-lg font-medium text-white mb-4">Model 属性</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">名称:</span>
+                        <span className="text-white">{selectedModel.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">类型:</span>
+                        <span className="text-white">{selectedModel.type}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">年龄:</span>
+                        <span className="text-white">{selectedModel.age}岁</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">眼睛颜色:</span>
+                        <span className="text-white">{selectedModel.eyeColor}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">体型:</span>
+                        <span className="text-white">{selectedModel.bodyType}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">种族:</span>
+                        <span className="text-white">{selectedModel.ethnicity}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">创建时间:</span>
+                        <span className="text-white text-sm">
+                          {new Date(selectedModel.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-4 p-3 bg-gray-700 rounded-md">
+                      <h4 className="text-sm font-medium text-white mb-2">基础 Prompt:</h4>
+                      <p className="text-sm text-gray-300">{selectedModel.basePrompt}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 右侧：展示栏 */}
+              <div className="space-y-6">
+                <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                  <h3 className="text-lg font-medium text-white mb-4">
+                    {selectedModel ? `${selectedModel.name} 生成的图片` : '图片展示'}
+                  </h3>
+                  
+                  {selectedModel ? (
+                    <div className="text-center py-12">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="mt-2 text-gray-400">使用 Photo AI 生成图片后，将在这里显示</p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="mt-2 text-gray-400">请先创建一个 Photo Model</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Photo AI 界面 */}
+          {activeTab === 'photo-ai' && (
+            <div className="bg-gray-800 rounded-lg border border-gray-700 p-8">
+              <div className="text-center">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <h3 className="mt-2 text-lg font-medium text-white">Photo AI</h3>
+                <p className="mt-1 text-gray-400">Photo AI 功能正在开发中...</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </>
   )
