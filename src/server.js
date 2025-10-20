@@ -107,7 +107,7 @@ app.use(
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
     resave: false,
     saveUninitialized: true, // 允许保存未初始化的 session，确保 Passport 数据被保存
-    rolling: true, // 每次请求都重新设置 cookie，保持活跃
+    rolling: false, // 禁用 rolling 模式，避免每次请求都创建新 session
     cookie: {
       secure: process.env.NODE_ENV === 'production', // 生产环境使用 HTTPS
       httpOnly: true,

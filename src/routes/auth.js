@@ -38,6 +38,18 @@ router.get(
       req.session.touch();
       console.log('🔧 强制标记 session 为已修改');
       
+      // 等待 session 保存完成
+      await new Promise((resolve) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('❌ Session 保存失败:', err);
+          } else {
+            console.log('✅ Session 保存成功，Passport 数据已保存');
+          }
+          resolve();
+        });
+      });
+      
       // 检查用户订阅状态
       const { query } = require('../database/db');
       const userResult = await query(
