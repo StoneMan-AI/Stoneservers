@@ -35,7 +35,21 @@ const storage = multer.diskStorage({
     cb(null, filename);
   }
 });
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB per file
+    files: 1 // 每次只处理一个文件
+  },
+  fileFilter: (req, file, cb) => {
+    // 只允许图片文件
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 // 中间件：检查用户认证
 const requireAuth = (req, res, next) => {
@@ -112,30 +126,49 @@ router.get('/models', requireAuth, async (req, res) => {
 });
 
 // 上传训练图片，返回可访问的相对路径 /uploads/models/xxx
-router.post('/models/upload', requireAuth, upload.array('photos', 100), async (req, res) => {
+router.post('/models/upload', requireAuth, (req, res, next) => {
+  console.log('📁 上传请求开始处理:', {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    user: req.user?.email
+  });
+  next();
+}, upload.single('photos'), (err, req, res, next) => {
+  if (err) {
+    console.error('📁 Multer 错误:', err);
+    return res.status(400).json({ success: false, message: 'File upload error: ' + err.message });
+  }
+  next();
+}, async (req, res) => {
   try {
     console.log('📁 上传请求接收:', {
-      filesCount: req.files ? req.files.length : 0,
+      hasFile: !!req.file,
       body: req.body,
       user: req.user?.email
     });
     
-    const files = req.files || [];
-    console.log('📁 文件详情:', files.map(f => ({
-      originalname: f.originalname,
-      filename: f.filename,
-      path: f.path,
-      size: f.size,
-      mimetype: f.mimetype
-    })));
+    const file = req.file;
+    if (!file) {
+      console.error('📁 没有接收到文件');
+      return res.status(400).json({ success: false, message: 'No file received' });
+    }
     
-    const mapped = files.map((f, idx) => ({
-      name: f.originalname,
-      path: `/uploads/models/${path.basename(f.path)}`,
-      size: f.size,
-      type: f.mimetype,
-      uploadOrder: idx + 1,
-    }));
+    console.log('📁 文件详情:', {
+      originalname: file.originalname,
+      filename: file.filename,
+      path: file.path,
+      size: file.size,
+      mimetype: file.mimetype
+    });
+    
+    const mapped = [{
+      name: file.originalname,
+      path: `/uploads/models/${path.basename(file.path)}`,
+      size: file.size,
+      type: file.mimetype,
+      uploadOrder: 1,
+    }];
     
     console.log('📁 返回路径:', mapped);
     res.json({ success: true, files: mapped });

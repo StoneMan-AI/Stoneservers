@@ -88,7 +88,31 @@ export default function AIGenerator() {
   // 处理照片上传
   const handlePhotoUpload = (event) => {
     const files = Array.from(event.target.files)
-    setUploadedPhotos(prev => [...prev, ...files])
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    
+    const validFiles = []
+    const invalidFiles = []
+    
+    files.forEach(file => {
+      if (file.size > maxSize) {
+        invalidFiles.push({ name: file.name, size: file.size })
+      } else if (!file.type.startsWith('image/')) {
+        invalidFiles.push({ name: file.name, reason: 'Not an image file' })
+      } else {
+        validFiles.push(file)
+      }
+    })
+    
+    if (invalidFiles.length > 0) {
+      const errorMsg = invalidFiles.map(f => 
+        f.reason ? `${f.name}: ${f.reason}` : `${f.name}: File too large (${(f.size / 1024 / 1024).toFixed(1)}MB)`
+      ).join('\n')
+      alert(`Some files were rejected:\n${errorMsg}\n\nMaximum file size: 10MB`)
+    }
+    
+    if (validFiles.length > 0) {
+      setUploadedPhotos(prev => [...prev, ...validFiles])
+    }
   }
 
   // 创建 Photo Model
@@ -130,38 +154,52 @@ export default function AIGenerator() {
         })
       }, 200)
 
-      // 先真实上传图片到服务器
-      console.log('📤 开始上传图片:', {
+      // 分批上传图片到服务器（每次一张）
+      console.log('📤 开始分批上传图片:', {
         count: uploadedPhotos.length,
         files: uploadedPhotos.map(f => ({ name: f.name, size: f.size, type: f.type }))
       })
       
-      const formData = new FormData()
-      uploadedPhotos.forEach((file, index) => {
-        console.log(`📤 添加文件 ${index + 1}:`, { name: file.name, size: file.size, type: file.type })
+      const photosData = []
+      
+      for (let i = 0; i < uploadedPhotos.length; i++) {
+        const file = uploadedPhotos[i]
+        console.log(`📤 上传第 ${i + 1}/${uploadedPhotos.length} 张图片:`, { 
+          name: file.name, 
+          size: file.size, 
+          type: file.type 
+        })
+        
+        const formData = new FormData()
         formData.append('photos', file)
-      })
-      
-      console.log('📤 发送上传请求到 /api/photo-models/models/upload')
-      const uploadRes = await fetch('/api/photo-models/models/upload', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      })
-      
-      console.log('📤 上传响应状态:', uploadRes.status, uploadRes.ok)
-      
-      if (!uploadRes.ok) {
-        const err = await uploadRes.json().catch(() => ({}))
-        console.error('📤 上传失败:', err)
-        throw new Error(err.message || 'Upload Photos Failed')
+        
+        const uploadRes = await fetch('/api/photo-models/models/upload', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        })
+        
+        console.log(`📤 第 ${i + 1} 张图片上传响应状态:`, uploadRes.status, uploadRes.ok)
+        
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json().catch(() => ({}))
+          console.error(`📤 第 ${i + 1} 张图片上传失败:`, {
+            status: uploadRes.status,
+            statusText: uploadRes.statusText,
+            error: err
+          })
+          throw new Error(err.message || `Upload Photo ${i + 1} Failed (${uploadRes.status})`)
+        }
+        
+        const uploadJson = await uploadRes.json()
+        console.log(`📤 第 ${i + 1} 张图片上传成功:`, uploadJson)
+        
+        if (uploadJson.files && uploadJson.files.length > 0) {
+          photosData.push(uploadJson.files[0])
+        }
       }
       
-      const uploadJson = await uploadRes.json()
-      console.log('📤 上传成功，返回数据:', uploadJson)
-      
-      const photosData = uploadJson.files || []
-      console.log('📤 处理后的照片数据:', photosData)
+      console.log('📤 所有图片上传完成，处理后的照片数据:', photosData)
 
       // 调用后端 API 创建模型
       const response = await fetch('/api/photo-models/models', {
